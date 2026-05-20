@@ -31,6 +31,24 @@ namespace TuPenca.API.Controllers
             _sitioProvider = sitioProvider;
         }
 
+        [HttpGet("publicos")]
+        public async Task<IActionResult> ObtenerSitiosPublicosAsync()
+        {
+            try
+            {
+                var sitios = await _sitioService.ObtenerSitiosAsync();
+                var activos = sitios
+                    .Where(s => s.Estado == Domain.Enums.EstadoSitio.Activo)
+                    .Select(s => new { s.Id, s.Nombre, s.UrlPropia })
+                    .ToList();
+                return Ok(activos);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
         [HttpGet("obtener/todos")]
         [Authorize(Roles = "AdministradorPlataforma")]
         public async Task<IActionResult> ObtenerSitiosAsync()
@@ -85,8 +103,7 @@ namespace TuPenca.API.Controllers
             {
                 var response = await _sitioService.SolicitarSitioAsync(solicitarSitioDto);
 
-                var pwd = new Password(9);
-                var password = pwd.Next();
+                var password = "123456";
 
                 var userRequest = new RegistroUsuarioRequestDto()
                 {

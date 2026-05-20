@@ -197,9 +197,10 @@ namespace TuPenca.Application.Services
                 return;
 
             // 2. Calcular pozo total
-            var pagos = await _unitOfWork.Pagos.GetAllAsync();
-            var pagosPenca = pagos.Where(p => p.PencaId == penca.Id && p.Estado == EstadoPago.Aprobado).ToList();
-            var pozoTotal = pagosPenca.Sum(p => p.Monto);
+            var pagos = (await _unitOfWork.Pagos.GetAllAsync())
+                .Where(p => p.PencaId == penca.Id && p.Estado == EstadoPago.Aprobado)
+                .ToList();
+            var pozoTotal = pagos.Sum(p => p.Monto);
 
             // 3. Obtener porcentajes de la plantilla y penca
             var plantilla = await _unitOfWork.PlantillasPenca.GetByIdConDetalleAsync(penca.PlantillaPencaId);

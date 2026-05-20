@@ -19,7 +19,10 @@
     <div class="form-card">
         <div class="form-group">
             <label>Fecha y hora</label>
-            <input type="datetime-local" @bind="nuevoPartido.Fecha" />
+            <div style="display:flex;gap:.5rem;">
+                <input type="date" @bind="nuevoPartido.Fecha" @bind:format="yyyy-MM-dd" style="flex:1;" />
+                <input type="time" @bind="horaPartido" style="width:120px;" />
+            </div>
         </div>
         <div class="form-group">
             <label>Fase</label>
@@ -132,6 +135,15 @@ else if (evento != null)
                     <input type="number" min="0" @bind="golesVisitante" />
                 </div>
             </div>
+            <div class="form-group">
+                <label>Ganador del partido</label>
+                <select @bind="equipoGanadorId">
+                    <option value="">Empate (sin penales)</option>
+                    <option value="@partidoSeleccionado.EquipoLocalId">@partidoSeleccionado.EquipoLocal</option>
+                    <option value="@partidoSeleccionado.EquipoVisitanteId">@partidoSeleccionado.EquipoVisitante</option>
+                </select>
+                <span style="font-size:.75rem;color:var(--muted);">Si fue empate con penales, seleccioná quién ganó</span>
+            </div>
             @if (formError != null) { <p class="error">@formError</p> }
             @if (exito != null) { <p style="color: green; font-size: .85rem;">@exito</p> }
             <div style="display: flex; gap: .75rem;">
@@ -160,6 +172,7 @@ else if (evento != null)
     private PartidoResponseDto? partidoSeleccionado;
     private int golesLocal = 0;
     private int golesVisitante = 0;
+    private string equipoGanadorId = "";
     private bool saving = false;
     private string? formError;
     private string? exito;
@@ -168,6 +181,7 @@ else if (evento != null)
     private bool mostrarFormPartido = false;
     private bool savingPartido = false;
     private string? partidoError;
+    private TimeOnly horaPartido = TimeOnly.FromDateTime(DateTime.UtcNow.AddHours(-3));
     private PartidoRequestDto nuevoPartido = new();
 
     protected override async Task OnInitializedAsync()
@@ -188,10 +202,13 @@ else if (evento != null)
         savingPartido = true; partidoError = null;
         try
         {
+            // Combinar fecha + hora
+            nuevoPartido.Fecha = nuevoPartido.Fecha.Date.Add(horaPartido.ToTimeSpan());
             var nuevo = await EventoService.AgregarPartidoAsync(nuevoPartido);
             evento!.Partidos ??= new();
             evento.Partidos.Add(nuevo);
             nuevoPartido = new() { EventoDeportivoId = EventoId };
+            horaPartido = TimeOnly.FromDateTime(DateTime.UtcNow.AddHours(-3));
             mostrarFormPartido = false;
         }
         catch (Exception ex) { partidoError = ex.Message; }
@@ -203,6 +220,7 @@ else if (evento != null)
         partidoSeleccionado = partido;
         golesLocal = partido.ResultadoLocal ?? 0;
         golesVisitante = partido.ResultadoVisitante ?? 0;
+        equipoGanadorId = "";
         formError = null;
         exito = null;
     }
@@ -213,11 +231,27 @@ else if (evento != null)
         saving = true; formError = null; exito = null;
         try
         {
+            // Deducir ganador si no es empate
+            Guid? ganadorFinal = null;
+            if (!string.IsNullOrEmpty(equipoGanadorId))
+            {
+                ganadorFinal = Guid.Parse(equipoGanadorId);
+            }
+            else if (golesLocal > golesVisitante)
+            {
+                ganadorFinal = partidoSeleccionado.EquipoLocalId;
+            }
+            else if (golesVisitante > golesLocal)
+            {
+                ganadorFinal = partidoSeleccionado.EquipoVisitanteId;
+            }
+
             var resultado = await EventoService.CargarResultadoAsync(new ResultadoRequestDto
             {
                 PartidoId = partidoSeleccionado.Id,
                 GolesLocal = golesLocal,
-                GolesVisitante = golesVisitante
+                GolesVisitante = golesVisitante,
+                EquipoGanadorId = ganadorFinal
             });
 
             // Actualizar la UI

@@ -50,7 +50,9 @@ namespace TuPenca.Application.Services
                     Id = p.Id,
                     Fecha = p.Fecha,
                     Fase = p.Fase,
+                    EquipoLocalId = p.EquipoLocalId,
                     EquipoLocal = eqLocal?.Nombre ?? string.Empty,
+                    EquipoVisitanteId = p.EquipoVisitanteId,
                     EquipoVisitante = eqVisitante?.Nombre ?? string.Empty,
                     ResultadoLocal = p.ResultadoLocal,
                     ResultadoVisitante = p.ResultadoVisitante
@@ -124,7 +126,9 @@ namespace TuPenca.Application.Services
                 Id = partido.Id,
                 Fecha = partido.Fecha,
                 Fase = partido.Fase,
+                EquipoLocalId = partido.EquipoLocalId,
                 EquipoLocal = equipoLocal.Nombre,
+                EquipoVisitanteId = partido.EquipoVisitanteId,
                 EquipoVisitante = equipoVisitante.Nombre
             };
         }

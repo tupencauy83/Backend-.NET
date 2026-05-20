@@ -23,11 +23,17 @@
         <div class="form-row">
             <div class="form-group">
                 <label>Fecha inicio</label>
-                <input type="datetime-local" @bind="form.FechaInicio" />
+                <div style="display:flex;gap:.5rem;">
+                    <input type="date" @bind="form.FechaInicio" @bind:format="yyyy-MM-dd" style="flex:1;" />
+                    <input type="time" @bind="horaInicio" style="width:120px;" />
+                </div>
             </div>
             <div class="form-group">
                 <label>Fecha fin</label>
-                <input type="datetime-local" @bind="form.FechaFin" />
+                <div style="display:flex;gap:.5rem;">
+                    <input type="date" @bind="form.FechaFin" @bind:format="yyyy-MM-dd" style="flex:1;" />
+                    <input type="time" @bind="horaFin" style="width:120px;" />
+                </div>
             </div>
         </div>
         <div class="form-group">
@@ -106,6 +112,8 @@ else
     private string? formError;
     private string nuevoDeporte = "";
     private string nuevoTipo = "";
+    private TimeOnly horaInicio = TimeOnly.FromDateTime(DateTime.UtcNow.AddHours(-3));
+    private TimeOnly horaFin = TimeOnly.FromDateTime(DateTime.UtcNow.AddHours(-3));
     private EventoDeportivoRequestDto form = new();
 
     protected override async Task OnInitializedAsync()
@@ -122,9 +130,14 @@ else
         saving = true; formError = null;
         try
         {
+            // Combinar fecha + hora
+            form.FechaInicio = form.FechaInicio.Date.Add(horaInicio.ToTimeSpan());
+            form.FechaFin = form.FechaFin.Date.Add(horaFin.ToTimeSpan());
             var nuevo = await EventoService.CrearAsync(form);
             eventos.Add(nuevo);
             form = new();
+            horaInicio = TimeOnly.FromDateTime(DateTime.UtcNow.AddHours(-3));
+            horaFin = TimeOnly.FromDateTime(DateTime.UtcNow.AddHours(-3));
             mostrarForm = false;
         }
         catch (Exception ex) { formError = ex.Message; }

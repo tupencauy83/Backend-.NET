@@ -49,6 +49,11 @@
                 <input type="number" min="0" max="49" @bind="form.PorcentajeComision" />
             </div>
         </div>
+        <div class="form-group">
+            <label>Puntos extra por acertar ganador</label>
+            <input type="number" min="0" @bind="form.PuntajeGanador" />
+            <span style="font-size:.75rem;color:var(--muted);">Puntos adicionales si el usuario acierta quién gana el partido</span>
+        </div>
 
         <label style="font-weight:600;margin-bottom:.5rem;display:block;">Reglas de puntuación</label>
         @for (int i = 0; i < form.Reglas.Count; i++)
@@ -75,6 +80,11 @@
             @(saving ? "Creando..." : "Crear plantilla")
         </button>
     </div>
+}
+
+@if (errorGeneral != null)
+{
+    <p class="error">@errorGeneral</p>
 }
 
 @if (loading)
@@ -117,11 +127,13 @@ else
     private bool saving = false;
     private bool mostrarForm = false;
     private string? formError;
+    private string? errorGeneral;
     private PlantillaPencaRequestDto form = new()
     {
         TiempoLimitePrevioMinutos = 60,
         MontoEntrada = 100,
         PorcentajeComision = 10,
+        PuntajeGanador = 2,
         Reglas = new() { new ReglaPuntuacionDto { Desviacion = 0, Puntaje = 3 } }
     };
 
@@ -146,6 +158,7 @@ else
                 TiempoLimitePrevioMinutos = 60,
                 MontoEntrada = 100,
                 PorcentajeComision = 10,
+                PuntajeGanador = 2,
                 Reglas = new() { new ReglaPuntuacionDto { Desviacion = 0, Puntaje = 3 } }
             };
             mostrarForm = false;
@@ -160,7 +173,8 @@ else
         {
             await PlantillaService.EliminarAsync(id);
             plantillas.RemoveAll(p => p.Id == id);
+            errorGeneral = null;
         }
-        catch (Exception ex) { formError = ex.Message; }
+        catch (Exception ex) { errorGeneral = ex.Message; }
     }
 }
