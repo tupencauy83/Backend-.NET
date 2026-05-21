@@ -109,6 +109,7 @@ public class AuthService : IAuthService
 
         // Extraer datos
         var email = decodedToken.Claims["email"]?.ToString();
+        var nombre = decodedToken.Claims.ContainsKey("name") ? decodedToken.Claims["name"]?.ToString() : email;
 
         if (string.IsNullOrEmpty(email))
             throw new Exception("Token inválido: no contiene email");
@@ -117,8 +118,24 @@ public class AuthService : IAuthService
         var usuario = await _unitOfWork.Usuarios
             .GetByEmailAsync(email, sitioId.Value);
 
-        if (usuario == null) 
-            throw new Exception("No se encontro el usuario");
+        // Si no existe, crearlo automáticamente
+        if (usuario == null)
+        {
+            usuario = new Usuario
+            {
+                Id = Guid.NewGuid(),
+                Nombre = nombre ?? email,
+                Email = email,
+                PasswordHash = "",
+                Rol = RolUsuario.UsuarioComun,
+                FechaRegistro = DateTime.UtcNow,
+                Estado = EstadoUsuario.Aprobado,
+                ProveedorAuth = ProveedorAuth.Google,
+                SitioId = sitioId.Value
+            };
+            await _unitOfWork.Usuarios.AddAsync(usuario);
+            await _unitOfWork.SaveChangesAsync();
+        }
 
         // Validar estado
         if (usuario.Estado == EstadoUsuario.Pendiente)
@@ -128,7 +145,7 @@ public class AuthService : IAuthService
             throw new Exception("Tu cuenta fue rechazada");
 
         if (usuario.ProveedorAuth == ProveedorAuth.Local)
-            throw new Exception("Este usuario está registrado con email y contraseña");
+            throw new Exception("Este usuario está registrado con email y contraseña. Usá el login normal.");
 
         // Generar JWT
         var rolClaim = usuario.Rol == RolUsuario.AdministradorSitio

@@ -1,13 +1,13 @@
 //{
 //  "type": "service_account",
 //  "project_id": "tupencauyproject",
-//  "private_key_id": "8f086a6e1781670b96ea534572b40ecf652ec6f4",
-//  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQC/uaTu81dspZ76\n4eWTJK1wCy4JIemZoZ71HPRrrZoUBegYxser3JPl1MF55b21VVjGSdLjlrKsYVpy\nqEBCmthQJKb3vZ+o3vobT2i+JmXtawsz8bJ9FhXJo5xo8ruocDWmnO98mUliRXCX\nVGql3SY3VpkpXRtH9Um8GrU1mfQzltdUdgF7IABmGrb2NRZTMvhEp0hy0Hcm8D5h\nD/B42DMqbz8sZmsaTShTb/EEQ3ro0JkAxxWofUseKtW3EBc3h6UPEwk2lC7G6ZB9\nI6cFkfHcdD/1XGSkaiejYhOp67iRpGz98M2fE0WKFjzurozEGombDQjilkLoa97w\ns2/9sJ75AgMBAAECggEAE/MJ76gn5mD0YigLtowYNOKg62fZMfhwfRJCd4rUj7VO\noXdbku0sgXtqF1g5rWrgRh+r3y0Q0eF+YxRRPWz1yZ8KtZgISy7KaPmSDUkbDYF4\nJLNHTn80DKtmzL/HGX91gazuOXGMwno1vTVWNISGo7bx0G1E96+U+MrxpI5sq8pd\n2z3K8pJ0BDHUK61g2DwZlkUXASHqm4PbIscTNSn68qde8Ms+1t3Bf6OijDMELcTH\nZwrMWgYLtWDwRBRSKIaXwyF5tsdsS8GDSTVBQhVJDuFEZ9KonS7k9b7WVM7fD7Qg\nlemmg4p+odrzFKTWMs7Xu/sV10VQd457Cvyrr/x9RQKBgQDo+ug6TYc0ZMP+07Kk\njsC5RcjwdPfW39NIcS8vCCGijzuuIqQX+XeN+/wyXq98XkcdnpkZzeXpPa+wraxz\nAf1+I7MfeXT4ttRfO+hEgoK+Pg7jc9ad5apcvmh6LK2GgDWaytVj+elI3P1Ss80R\nZHl71G8LHB6Gc/+eVQdhO9/K7QKBgQDSqzfb3j+uXuCe+3S2ibAJF4a0LvPX8ack\nhSal0e/NDSAxJLTVS/cVwGIL7kOYjQj7mfUreL7A/6ma+GrjJIPOY85TibRlPEjs\nCkLnU/QVHrnuFfJwxfTqshPKb9yHW6JylO30G2+ZkvmqJ1zYzDlC5xZakA5QDRzS\nXIU+SYdGvQKBgEaeby/k+huWg5ZFYvvgTWibT4obWlhmZeuqayvtYgydL/DbjTO7\nKVL/U3WNH9Ip3ZKL1UpuD8eALDX4nrIJo2XNumjK7vrIqFzpksDZcnnp46dsIFyi\nFd6g1Jhb3IlNaXIvEzmHsf+lBKBB4eHou64eOT572oDUvmGm0mLVvEMNAoGAVAve\n8ybNvSE49/RV8eUoh9gM86Gvwr0z84vziUAiLWpJJ5H/WwE9iD4CX8Qkz52kscwQ\nVdGMOK9G2P62lfwhYZvL2uQbRjAw34qQen2x6SMjBmtXF8rCFUgKQT8zegUC4Deu\nXy767QgH9uxRTGTdi2VqM6M5MpKopvwmZF0tTPkCgYEAhDAbPXmoGavvt+8O/nK3\n0i7m0ozx5JnNMFd2kWBGQgu7p9Ia1dEjZs8GdaTfSNGmgPYl188+8/sE1ACjWQ33\nl8TsGyhGolXoP0HxJcjTPOidxtyNJthwG3XubNmRljpcIqPKxU09oECLOei9VNPI\nGDvoGHJrBGBlBcXy68cvqcQ=\n-----END PRIVATE KEY-----\n",
+//  "private_key_id": "REEMPLAZAR",
+//  "private_key": "REEMPLAZAR",
 //  "client_email": "firebase-adminsdk-fbsvc@tupencauyproject.iam.gserviceaccount.com",
-//  "client_id": "110026718510507680431",
+//  "client_id": "REEMPLAZAR",
 //  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
 //  "token_uri": "https://oauth2.googleapis.com/token",
 //  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-//  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-fbsvc%40tupencauyproject.iam.gserviceaccount.com",
+//  "client_x509_cert_url": "REEMPLAZAR",
 //  "universe_domain": "googleapis.com"
 //}
