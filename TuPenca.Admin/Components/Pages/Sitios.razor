@@ -3,6 +3,7 @@
 @using TuPenca.Application.DTOs.Sitio
 @using TuPenca.Domain.Enums
 @inject ISitioService SitioService
+@inject IUsuarioService UsuarioService
 @rendermode InteractiveServer
 
 <h1>Gestión de Sitios</h1>
@@ -91,6 +92,17 @@ else
                 Id = id, 
                 Estado = TuPenca.Domain.Enums.EstadoSitio.Activo 
             });
+            // Aprobar también al admin del sitio
+            var usuarios = await UsuarioService.ObtenerUsuariosAsync();
+            var adminSitio = usuarios.FirstOrDefault(u => u.SitioId == id);
+            if (adminSitio != null && adminSitio.Estado == TuPenca.Domain.Enums.EstadoUsuario.Pendiente)
+            {
+                await UsuarioService.ActualizarEstadoAsync(new TuPenca.Application.DTOs.Usuario.UsuarioActualizarEstadoRequestDto
+                {
+                    Id = adminSitio.Id,
+                    Estado = TuPenca.Domain.Enums.EstadoUsuario.Aprobado
+                });
+            }
             await Cargar();
         }
         catch (Exception ex) { error = ex.Message; }

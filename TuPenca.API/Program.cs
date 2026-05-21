@@ -3,6 +3,7 @@ using Google.Apis.Auth.OAuth2;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using TuPenca.Infrastructure.Services;
 using System.Text;
 using TuPenca.Application.Interfaces.Services;
 using TuPenca.Application.Services;
@@ -69,6 +70,7 @@ builder.Services.AddScoped<IInvitacionService, InvitacionService>();
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
 builder.Services.AddScoped<IFirebaseService, FirebaseService>();
+builder.Services.AddSingleton<IEmailService, EmailService>();
 
 // ─── AutoMapper ───────────────────────────────────────────────
 //builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies()); 

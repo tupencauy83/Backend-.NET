@@ -7,6 +7,7 @@ using TuPenca.Domain.Interfaces.Repositories;
 using TuPenca.Infrastructure.Data;
 using TuPenca.Infrastructure.Data.Repositories;
 using TuPenca.Infrastructure.Interfaces.Providers;
+using TuPenca.Infrastructure.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -38,6 +39,8 @@ builder.Services.AddScoped<IEstadisticasService, EstadisticasService>();
 builder.Services.AddScoped<IPagoService, PagoService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IJwtService, JwtService>();
+builder.Services.AddScoped<IFirebaseService, FirebaseService>();
+builder.Services.AddScoped<IUsuarioService, UsuarioService>();
 
 // ─── SitioProvider (null para admin plataforma) ───────────────
 builder.Services.AddHttpContextAccessor();

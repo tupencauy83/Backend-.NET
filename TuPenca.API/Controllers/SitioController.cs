@@ -7,6 +7,7 @@ using TuPenca.Application.DTOs.Sitio;
 using TuPenca.Application.DTOs.Usuario;
 using TuPenca.Application.Interfaces.Services;
 using TuPenca.Domain.Entities;
+using TuPenca.Infrastructure.Services;
 using TuPenca.Infrastructure.Interfaces.Providers;
 
 namespace TuPenca.API.Controllers
@@ -19,16 +20,19 @@ namespace TuPenca.API.Controllers
         private readonly IAuthService _authService;
         private readonly IUsuarioService _usuarioService;
         private readonly ISitioProvider _sitioProvider;
+        private readonly IEmailService _emailService;
 
         public SitioController(ISitioService sitioService, 
             IAuthService authService,
             IUsuarioService usuarioService,
-            ISitioProvider sitioProvider)
+            ISitioProvider sitioProvider,
+            IEmailService emailService)
         {
             _sitioService = sitioService;
             _authService = authService;
             _usuarioService = usuarioService;
             _sitioProvider = sitioProvider;
+            _emailService = emailService;
         }
 
         [HttpGet("publicos")]
@@ -103,7 +107,8 @@ namespace TuPenca.API.Controllers
             {
                 var response = await _sitioService.SolicitarSitioAsync(solicitarSitioDto);
 
-                var password = "123456";
+                // Generar contraseña aleatoria
+                var password = Guid.NewGuid().ToString()[..8];
 
                 var userRequest = new RegistroUsuarioRequestDto()
                 {
@@ -114,6 +119,26 @@ namespace TuPenca.API.Controllers
                 };
                 
                 await _authService.RegistrarUsuarioAsync(userRequest, response.Id);
+
+                // Enviar email con credenciales
+                try
+                {
+                    await _emailService.EnviarAsync(
+                        solicitarSitioDto.Email,
+                        "Bienvenido a TuPenca - Credenciales de tu sitio",
+                        $@"<h2>¡Tu sitio fue creado!</h2>
+                        <p>Hola {solicitarSitioDto.NombreUsuario},</p>
+                        <p>Tu sitio <strong>{solicitarSitioDto.Nombre}</strong> fue creado exitosamente.</p>
+                        <p>Tus credenciales de acceso como administrador del sitio:</p>
+                        <ul>
+                            <li><strong>Email:</strong> {solicitarSitioDto.Email}</li>
+                            <li><strong>Contraseña:</strong> {password}</li>
+                        </ul>
+                        <p>Te recomendamos cambiar la contraseña después del primer inicio de sesión.</p>
+                        <p>— Equipo TuPenca</p>"
+                    );
+                }
+                catch { /* Si falla el email, no bloquear la creación del sitio */ }
 
                 return Ok(response);
             }
