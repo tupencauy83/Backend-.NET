@@ -99,12 +99,28 @@ builder.Services.AddCors(options =>
 // Ejemplo:
 // builder.Services.AddScoped<IPencaService, PencaService>();
 
+var firebaseJson = builder.Configuration["Firebase:ServiceAccountJson"];
 
-var firebasePath = Path.Combine(Directory.GetCurrentDirectory(), "tupencauy-key.json");
+GoogleCredential credential;
 
-FirebaseApp.Create(new AppOptions()
+if (!string.IsNullOrWhiteSpace(firebaseJson))
 {
-    Credential = GoogleCredential.FromFile(firebasePath)
+    // Railway / Producción
+    credential = GoogleCredential.FromJson(firebaseJson);
+}
+else
+{
+    // Desarrollo local
+    var firebasePath = Path.Combine(
+        Directory.GetCurrentDirectory(),
+        "tupencauy-key.json");
+
+    credential = GoogleCredential.FromFile(firebasePath);
+}
+
+FirebaseApp.Create(new AppOptions
+{
+    Credential = credential
 });
 
 var app = builder.Build();
