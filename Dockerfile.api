@@ -1,10 +1,21 @@
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+<<<<<<< HEAD
+=======
+
+>>>>>>> ad2732372c276bb22ecf2cd88ad2bd3b1e337a80
 WORKDIR /src
 
 COPY . .
 
+<<<<<<< HEAD
 RUN dotnet restore
 RUN dotnet publish TuPenca.API/TuPenca.API.csproj -c Release -o /app/publish
+=======
+WORKDIR /src/TuPenca.API
+
+RUN dotnet restore
+RUN dotnet publish -c Release -o /app/publish
+>>>>>>> ad2732372c276bb22ecf2cd88ad2bd3b1e337a80
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0
 
