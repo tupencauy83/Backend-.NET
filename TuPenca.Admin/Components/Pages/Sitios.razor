@@ -1,11 +1,8 @@
 @page "/sitios"
 @using TuPenca.Application.Interfaces.Services
 @using TuPenca.Application.DTOs.Sitio
-@using TuPenca.Infrastructure.Services
 @using TuPenca.Domain.Enums
 @inject ISitioService SitioService
-@inject IUsuarioService UsuarioService
-@inject IEmailService EmailService
 @rendermode InteractiveServer
 
 <h1>Gestión de Sitios</h1>
@@ -89,52 +86,9 @@ else
     {
         try
         {
-            var sitio = await SitioService.ObtenerSitioAsync(id);
-            if (sitio == null)
-            {
-                error = "Sitio no encontrado";
-                return;
-            }
-
-            await SitioService.ActualizarSitioPendienteAsync(new SitioActualizarEstadoRequest 
-            { 
-                Id = id, 
-                Estado = TuPenca.Domain.Enums.EstadoSitio.Activo 
-            });
-            // Aprobar también al admin del sitio
-            var usuarios = await UsuarioService.ObtenerUsuariosAsync();
-            var adminSitio = usuarios.FirstOrDefault(u => u.SitioId == id);
-            if (adminSitio != null && adminSitio.Estado == TuPenca.Domain.Enums.EstadoUsuario.Pendiente)
-            {
-                await UsuarioService.ActualizarEstadoAsync(new TuPenca.Application.DTOs.Usuario.UsuarioActualizarEstadoRequestDto
-                {
-                    Id = adminSitio.Id,
-                    Estado = TuPenca.Domain.Enums.EstadoUsuario.Aprobado
-                });
-
-                var password = Guid.NewGuid().ToString()[..8];
-                await UsuarioService.ActualizarPasswordAsync(new TuPenca.Application.DTOs.Usuario.UsuarioActualizarPasswordRequestDto
-                {
-                    Id = adminSitio.Id,
-                    Password = password,
-                    PasswordConfirm = password
-                });
-
-                await EmailService.EnviarAsync(
-                    adminSitio.Email,
-                    "Bienvenido a TuPenca - Credenciales de tu sitio",
-                    $@"<h2>¡Tu sitio fue aprobado!</h2>
-                    <p>Hola {adminSitio.Nombre},</p>
-                    <p>Tu sitio <strong>{sitio.Nombre}</strong> fue aprobado exitosamente.</p>
-                    <p>Tus credenciales de acceso como administrador del sitio:</p>
-                    <ul>
-                        <li><strong>Email:</strong> {adminSitio.Email}</li>
-                        <li><strong>Contraseña:</strong> {password}</li>
-                    </ul>
-                    <p>Te recomendamos cambiar la contraseña después del primer inicio de sesión.</p>
-                    <p>— Equipo TuPenca</p>"
-                );
-            }
+            var response = await SitioService.AprobarSitioAsync(id);
+            if (response.Mensaje.Contains("no encontrado", StringComparison.OrdinalIgnoreCase))
+                error = response.Mensaje;
             await Cargar();
         }
         catch (Exception ex) { error = ex.Message; }
@@ -144,39 +98,9 @@ else
     {
         try
         {
-            var sitio = await SitioService.ObtenerSitioAsync(id);
-            if (sitio == null)
-            {
-                error = "Sitio no encontrado";
-                return;
-            }
-
-            await SitioService.ActualizarSitioPendienteAsync(new SitioActualizarEstadoRequest 
-            { 
-                Id = id, 
-                Estado = TuPenca.Domain.Enums.EstadoSitio.Inactivo 
-            });
-
-            var usuarios = await UsuarioService.ObtenerUsuariosAsync();
-            var adminSitio = usuarios.FirstOrDefault(u => u.SitioId == id);
-            if (adminSitio != null)
-            {
-                await UsuarioService.ActualizarEstadoAsync(new TuPenca.Application.DTOs.Usuario.UsuarioActualizarEstadoRequestDto
-                {
-                    Id = adminSitio.Id,
-                    Estado = TuPenca.Domain.Enums.EstadoUsuario.Rechazado
-                });
-
-                await EmailService.EnviarAsync(
-                    adminSitio.Email,
-                    "Tu sitio fue rechazado",
-                    $@"<h2>Solicitud de sitio rechazada</h2>
-                    <p>Hola {adminSitio.Nombre},</p>
-                    <p>Lamentamos informarte que tu solicitud para el sitio <strong>{sitio.Nombre}</strong> fue rechazada.</p>
-                    <p>Si creés que fue un error, podés volver a comunicarte con el equipo de TuPenca.</p>
-                    <p>— Equipo TuPenca</p>"
-                );
-            }
+            var response = await SitioService.RechazarSitioAsync(id);
+            if (response.Mensaje.Contains("no encontrado", StringComparison.OrdinalIgnoreCase))
+                error = response.Mensaje;
             await Cargar();
         }
         catch (Exception ex) { error = ex.Message; }

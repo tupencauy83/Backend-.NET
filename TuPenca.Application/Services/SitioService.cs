@@ -1,17 +1,25 @@
-﻿using TuPenca.Application.DTOs.Sitio;
+﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Logging;
+using TuPenca.Application.DTOs.Sitio;
 using TuPenca.Application.Interfaces.Services;
 using TuPenca.Domain.Entities;
 using TuPenca.Domain.Interfaces;
+using TuPenca.Domain.Enums;
 
 namespace TuPenca.Application.Services
 {
     public class SitioService : ISitioService
     {
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IEmailService _emailService;
+        private readonly ILogger<SitioService> _logger;
+        private readonly PasswordHasher<string> _hasher = new();
 
-        public SitioService(IUnitOfWork unitOfWork)
+        public SitioService(IUnitOfWork unitOfWork, IEmailService emailService, ILogger<SitioService> logger)
         {
             _unitOfWork = unitOfWork;
+            _emailService = emailService;
+            _logger = logger;
         }
 
         public async Task<IEnumerable<SitioDto>> ObtenerSitiosAsync()
@@ -97,6 +105,21 @@ namespace TuPenca.Application.Services
             };
 
             await _unitOfWork.Sitios.AddAsync(sitio);
+
+            var usuarioAdmin = new Usuario
+            {
+                Id = Guid.NewGuid(),
+                Nombre = sitioDto.NombreUsuario,
+                Email = sitioDto.Email,
+                PasswordHash = "",
+                Rol = RolUsuario.AdministradorSitio,
+                FechaRegistro = DateTime.UtcNow,
+                Estado = EstadoUsuario.Pendiente,
+                ProveedorAuth = ProveedorAuth.Local,
+                SitioId = sitio.Id
+            };
+
+            await _unitOfWork.Usuarios.AddAsync(usuarioAdmin);
             await _unitOfWork.SaveChangesAsync();
 
             return new SitioResponseDto()
@@ -141,6 +164,110 @@ namespace TuPenca.Application.Services
                 Id = sitio.Id,
                 Nombre = sitio.Nombre,
                 Mensaje = "Sitio actualizado exitosamente"
+            };
+        }
+
+        public async Task<SitioResponseDto> AprobarSitioAsync(Guid sitioId)
+        {
+            var sitio = await _unitOfWork.Sitios.GetByIdAsync(sitioId);
+            if (sitio == null)
+                return new SitioResponseDto { Mensaje = "Sitio no encontrado" };
+
+            sitio.Estado = EstadoSitio.Activo;
+
+            var usuarios = await _unitOfWork.Usuarios.GetAllAsync();
+            var usuario = usuarios.FirstOrDefault(u => u.SitioId == sitioId);
+            string? password = null;
+
+            if (usuario != null)
+            {
+                usuario.Estado = EstadoUsuario.Aprobado;
+                password = Guid.NewGuid().ToString()[..8];
+                usuario.PasswordHash = _hasher.HashPassword(null!, password);
+                await _unitOfWork.Usuarios.UpdateAsync(usuario);
+            }
+
+            await _unitOfWork.Sitios.UpdateAsync(sitio);
+            await _unitOfWork.SaveChangesAsync();
+
+            if (usuario != null && password != null)
+            {
+                try
+                {
+                    await _emailService.EnviarAsync(
+                        usuario.Email,
+                        "Bienvenido a TuPenca - Credenciales de tu sitio",
+                        $@"<h2>¡Tu sitio fue aprobado!</h2>
+                        <p>Hola {usuario.Nombre},</p>
+                        <p>Tu sitio <strong>{sitio.Nombre}</strong> fue aprobado exitosamente.</p>
+                        <p>Tus credenciales de acceso como administrador del sitio:</p>
+                        <ul>
+                            <li><strong>Email:</strong> {usuario.Email}</li>
+                            <li><strong>Contraseña:</strong> {password}</li>
+                        </ul>
+                        <p>Te recomendamos cambiar la contraseña después del primer inicio de sesión.</p>
+                        <p>— Equipo TuPenca</p>"
+                    );
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error enviando credenciales por email para el sitio {SitioId} a {Email}", sitioId, usuario.Email);
+                }
+            }
+
+            return new SitioResponseDto
+            {
+                Id = sitio.Id,
+                Nombre = sitio.Nombre,
+                Mensaje = "Sitio aprobado exitosamente"
+            };
+        }
+
+        public async Task<SitioResponseDto> RechazarSitioAsync(Guid sitioId)
+        {
+            var sitio = await _unitOfWork.Sitios.GetByIdAsync(sitioId);
+            if (sitio == null)
+                return new SitioResponseDto { Mensaje = "Sitio no encontrado" };
+
+            sitio.Estado = EstadoSitio.Inactivo;
+
+            var usuarios = await _unitOfWork.Usuarios.GetAllAsync();
+            var usuario = usuarios.FirstOrDefault(u => u.SitioId == sitioId);
+
+            if (usuario != null)
+            {
+                usuario.Estado = EstadoUsuario.Rechazado;
+                await _unitOfWork.Usuarios.UpdateAsync(usuario);
+            }
+
+            await _unitOfWork.Sitios.UpdateAsync(sitio);
+            await _unitOfWork.SaveChangesAsync();
+
+            if (usuario != null)
+            {
+                try
+                {
+                    await _emailService.EnviarAsync(
+                        usuario.Email,
+                        "Tu sitio fue rechazado",
+                        $@"<h2>Solicitud de sitio rechazada</h2>
+                        <p>Hola {usuario.Nombre},</p>
+                        <p>Lamentamos informarte que tu solicitud para el sitio <strong>{sitio.Nombre}</strong> fue rechazada.</p>
+                        <p>Si creés que fue un error, podés volver a comunicarte con el equipo de TuPenca.</p>
+                        <p>— Equipo TuPenca</p>"
+                    );
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error enviando rechazo por email para el sitio {SitioId} a {Email}", sitioId, usuario.Email);
+                }
+            }
+
+            return new SitioResponseDto
+            {
+                Id = sitio.Id,
+                Nombre = sitio.Nombre,
+                Mensaje = "Sitio rechazado exitosamente"
             };
         }
 

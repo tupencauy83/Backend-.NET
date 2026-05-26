@@ -6,13 +6,17 @@ namespace TuPenca.Application.Interfaces.Services
     {
         Task<IEnumerable<SitioDto>> ObtenerSitiosAsync();
 
-        Task<SitioDto> ObtenerSitioAsync(Guid sitioId);
+        Task<SitioDto?> ObtenerSitioAsync(Guid sitioId);
 
         Task<IEnumerable<SitioDto>> ObtenerSitiosPendientesAsync();
 
         Task<SitioResponseDto> SolicitarSitioAsync(SitioPendienteRequestDto sitioDto);
 
         Task<SitioResponseDto> ActualizarSitioPendienteAsync(SitioActualizarEstadoRequest sitioDto);
+
+        Task<SitioResponseDto> AprobarSitioAsync(Guid sitioId);
+
+        Task<SitioResponseDto> RechazarSitioAsync(Guid sitioId);
 
         Task<SitioResponseDto> CrearSitioAsync(SitioRequestDto sitioDto);
 

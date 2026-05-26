@@ -1,15 +1,11 @@
 using Microsoft.Extensions.Configuration;
+using TuPenca.Application.Interfaces.Services;
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
 
 namespace TuPenca.Infrastructure.Services
 {
-    public interface IEmailService
-    {
-        Task EnviarAsync(string destinatario, string asunto, string cuerpo);
-    }
-
     public class EmailService : IEmailService
     {
         private readonly IConfiguration _configuration;
