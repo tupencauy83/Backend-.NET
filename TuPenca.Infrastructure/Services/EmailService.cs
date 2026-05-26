@@ -11,7 +11,7 @@ namespace TuPenca.Infrastructure.Services
     public class EmailService : IEmailService
     {
         private const string RemitenteMail = "uytupenca@gmail.com";
-        private const string AppPassword = "bolvuytjqovwmfnz";
+        private const string AppPassword = "fmn nkrw kjpn xbp";
         private const string NombreRemitente = "TuPenca";
 
         public async Task EnviarAsync(string destinatario, string asunto, string cuerpo)
