@@ -10,7 +10,7 @@ namespace TuPenca.Infrastructure.Services
 
     public class EmailService : IEmailService
     {
-        private const string RemitenteMail = "uytupenca@gmail.com";
+        private const string RemitenteMail = "tupencauy83@gmail.com;
         private const string AppPassword = "fmn nkrw kjpn xbp";
         private const string NombreRemitente = "TuPenca";
 
