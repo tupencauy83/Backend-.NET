@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using PasswordGenerator;
 using System.Security.Claims;
 using TuPenca.Application.DTOs.Auth;
@@ -21,18 +22,21 @@ namespace TuPenca.API.Controllers
         private readonly IUsuarioService _usuarioService;
         private readonly ISitioProvider _sitioProvider;
         private readonly IEmailService _emailService;
+        private readonly ILogger<SitioController> _logger;
 
         public SitioController(ISitioService sitioService, 
             IAuthService authService,
             IUsuarioService usuarioService,
             ISitioProvider sitioProvider,
-            IEmailService emailService)
+            IEmailService emailService,
+            ILogger<SitioController> logger)
         {
             _sitioService = sitioService;
             _authService = authService;
             _usuarioService = usuarioService;
             _sitioProvider = sitioProvider;
             _emailService = emailService;
+            _logger = logger;
         }
 
         [HttpGet("publicos")]
@@ -141,9 +145,13 @@ namespace TuPenca.API.Controllers
                             <p>— Equipo TuPenca</p>"
                         );
                     }
-                    catch
+                    catch (Exception ex)
                     {
-                        // Si falla o se cuelga el email, no bloquear la creación del sitio
+                        _logger.LogError(
+                            ex,
+                            "Error enviando credenciales por email para el sitio {SitioId} a {Email}",
+                            response.Id,
+                            solicitarSitioDto.Email);
                     }
                 });
 
