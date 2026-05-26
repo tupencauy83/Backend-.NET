@@ -10,9 +10,9 @@ namespace TuPenca.Infrastructure.Services
 
     public class EmailService : IEmailService
     {
-        private const string RemitenteMail = "tupencauy83@gmail.com;
+        private const string RemitenteMail = "tupencauy83@gmail.com";
         private const string AppPassword = "fmn nkrw kjpn xbp";
-        private const string NombreRemitente = "TuPenca";
+        private const string NombreRemitente = "Tu Penca UY";
 
         public async Task EnviarAsync(string destinatario, string asunto, string cuerpo)
         {
