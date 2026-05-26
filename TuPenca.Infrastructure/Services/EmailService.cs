@@ -1,5 +1,6 @@
-using System.Net;
-using System.Net.Mail;
+using System.Net.Http;
+using System.Text;
+using System.Text.Json;
 
 namespace TuPenca.Infrastructure.Services
 {
@@ -10,29 +11,41 @@ namespace TuPenca.Infrastructure.Services
 
     public class EmailService : IEmailService
     {
-        private const string RemitenteMail = "tupencauy83@gmail.com";
-        private const string AppPassword = "wxolbjgnfmfkrnjb";
-        private const string NombreRemitente = "Tu Penca UY";
+        private readonly IConfiguration _configuration;
+        private readonly HttpClient _httpClient;
+
+        public EmailService(IConfiguration configuration)
+        {
+            _configuration = configuration;
+            _httpClient = new HttpClient();
+        }
 
         public async Task EnviarAsync(string destinatario, string asunto, string cuerpo)
         {
-            var mensaje = new MailMessage
-            {
-                From = new MailAddress(RemitenteMail, NombreRemitente),
-                Subject = asunto,
-                Body = cuerpo,
-                IsBodyHtml = true
-            };
-            mensaje.To.Add(destinatario);
+            var apiKey = _configuration["Resend:ApiKey"];
+            var fromEmail = _configuration["Resend:FromEmail"] ?? "Tu Penca UY <onboarding@resend.dev>";
 
-            using var smtp = new SmtpClient("smtp.gmail.com", 587)
+            if (string.IsNullOrWhiteSpace(apiKey))
+                throw new InvalidOperationException("Falta configurar Resend:ApiKey");
+
+            var payload = new
             {
-                Credentials = new NetworkCredential(RemitenteMail, AppPassword),
-                EnableSsl = true,
-                Timeout = 10000
+                from = fromEmail,
+                to = new[] { destinatario },
+                subject = asunto,
+                html = cuerpo
             };
 
-            await smtp.SendMailAsync(mensaje);
+            using var request = new HttpRequestMessage(HttpMethod.Post, "https://api.resend.com/emails");
+            request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", apiKey);
+            request.Content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
+
+            using var response = await _httpClient.SendAsync(request);
+            if (!response.IsSuccessStatusCode)
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                throw new Exception($"Resend devolvió {(int)response.StatusCode}: {error}");
+            }
         }
     }
 }
