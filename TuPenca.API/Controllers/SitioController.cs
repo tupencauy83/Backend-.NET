@@ -193,6 +193,32 @@ namespace TuPenca.API.Controllers
                             }
                         });
                     }
+                    else
+                    {
+                        _ = Task.Run(async () =>
+                        {
+                            try
+                            {
+                                await _emailService.EnviarAsync(
+                                    usuario.Email,
+                                    "Tu sitio fue rechazado",
+                                    $@"<h2>Solicitud de sitio rechazada</h2>
+                                    <p>Hola {usuario.Nombre},</p>
+                                    <p>Lamentamos informarte que tu solicitud para el sitio <strong>{response.Nombre}</strong> fue rechazada.</p>
+                                    <p>Si creés que fue un error, podés volver a comunicarte con el equipo de TuPenca.</p>
+                                    <p>— Equipo TuPenca</p>"
+                                );
+                            }
+                            catch (Exception ex)
+                            {
+                                _logger.LogError(
+                                    ex,
+                                    "Error enviando rechazo por email para el sitio {SitioId} a {Email}",
+                                    sitioDto.Id,
+                                    usuario.Email);
+                            }
+                        });
+                    }
                 }
 
                 return Ok(response);
