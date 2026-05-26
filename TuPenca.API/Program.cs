@@ -22,7 +22,12 @@ var builder = WebApplication.CreateBuilder(args);
 
 // ─── Base de datos ───────────────────────────────────────────
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseSqlServer(
+        builder.Configuration.GetConnectionString("DefaultConnection"),
+        sqlOptions =>
+        {
+            sqlOptions.EnableRetryOnFailure();
+        }));
 
 // ─── Autenticación JWT ────────────────────────────────────────
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -125,19 +130,25 @@ FirebaseApp.Create(new AppOptions
 
 var app = builder.Build();
 
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    db.Database.Migrate();
+}
+
 // ─── Middleware ───────────────────────────────────────────────
 app.UseMiddleware<SitioResolverMiddleware>();
 
 // ─── Middleware pipeline ──────────────────────────────────────
-if (app.Environment.IsDevelopment())
-{
+//if (app.Environment.IsDevelopment())
+//{
     app.UseSwagger();
     app.UseSwaggerUI();
-}
+//}
 
 app.UseHttpsRedirection();
 app.UseCors("AllowAll");
-app.UseAuthentication();   // ⚠️ siempre antes de Authorization
+app.UseAuthentication();   // siempre antes de Authorization
 app.UseAuthorization();
 
 app.MapControllers();
