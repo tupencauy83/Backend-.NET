@@ -41,6 +41,7 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IFirebaseService, FirebaseService>();
 builder.Services.AddScoped<IUsuarioService, UsuarioService>();
+builder.Services.AddSingleton<IEmailService, EmailService>();
 
 // ─── SitioProvider (null para admin plataforma) ───────────────
 builder.Services.AddHttpContextAccessor();

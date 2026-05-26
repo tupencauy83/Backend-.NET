@@ -164,60 +164,54 @@ namespace TuPenca.API.Controllers
                             PasswordConfirm = password
                         });
 
-                        _ = Task.Run(async () =>
+                        try
                         {
-                            try
-                            {
-                                await _emailService.EnviarAsync(
-                                    usuario.Email,
-                                    "Bienvenido a TuPenca - Credenciales de tu sitio",
-                                    $@"<h2>¡Tu sitio fue aprobado!</h2>
-                                    <p>Hola {usuario.Nombre},</p>
-                                    <p>Tu sitio <strong>{response.Nombre}</strong> fue aprobado exitosamente.</p>
-                                    <p>Tus credenciales de acceso como administrador del sitio:</p>
-                                    <ul>
-                                        <li><strong>Email:</strong> {usuario.Email}</li>
-                                        <li><strong>Contraseña:</strong> {password}</li>
-                                    </ul>
-                                    <p>Te recomendamos cambiar la contraseña después del primer inicio de sesión.</p>
-                                    <p>— Equipo TuPenca</p>"
-                                );
-                            }
-                            catch (Exception ex)
-                            {
-                                _logger.LogError(
-                                    ex,
-                                    "Error enviando credenciales por email para el sitio {SitioId} a {Email}",
-                                    sitioDto.Id,
-                                    usuario.Email);
-                            }
-                        });
+                            await _emailService.EnviarAsync(
+                                usuario.Email,
+                                "Bienvenido a TuPenca - Credenciales de tu sitio",
+                                $@"<h2>¡Tu sitio fue aprobado!</h2>
+                                <p>Hola {usuario.Nombre},</p>
+                                <p>Tu sitio <strong>{response.Nombre}</strong> fue aprobado exitosamente.</p>
+                                <p>Tus credenciales de acceso como administrador del sitio:</p>
+                                <ul>
+                                    <li><strong>Email:</strong> {usuario.Email}</li>
+                                    <li><strong>Contraseña:</strong> {password}</li>
+                                </ul>
+                                <p>Te recomendamos cambiar la contraseña después del primer inicio de sesión.</p>
+                                <p>— Equipo TuPenca</p>"
+                            );
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError(
+                                ex,
+                                "Error enviando credenciales por email para el sitio {SitioId} a {Email}",
+                                sitioDto.Id,
+                                usuario.Email);
+                        }
                     }
                     else
                     {
-                        _ = Task.Run(async () =>
+                        try
                         {
-                            try
-                            {
-                                await _emailService.EnviarAsync(
-                                    usuario.Email,
-                                    "Tu sitio fue rechazado",
-                                    $@"<h2>Solicitud de sitio rechazada</h2>
-                                    <p>Hola {usuario.Nombre},</p>
-                                    <p>Lamentamos informarte que tu solicitud para el sitio <strong>{response.Nombre}</strong> fue rechazada.</p>
-                                    <p>Si creés que fue un error, podés volver a comunicarte con el equipo de TuPenca.</p>
-                                    <p>— Equipo TuPenca</p>"
-                                );
-                            }
-                            catch (Exception ex)
-                            {
-                                _logger.LogError(
-                                    ex,
-                                    "Error enviando rechazo por email para el sitio {SitioId} a {Email}",
-                                    sitioDto.Id,
-                                    usuario.Email);
-                            }
-                        });
+                            await _emailService.EnviarAsync(
+                                usuario.Email,
+                                "Tu sitio fue rechazado",
+                                $@"<h2>Solicitud de sitio rechazada</h2>
+                                <p>Hola {usuario.Nombre},</p>
+                                <p>Lamentamos informarte que tu solicitud para el sitio <strong>{response.Nombre}</strong> fue rechazada.</p>
+                                <p>Si creés que fue un error, podés volver a comunicarte con el equipo de TuPenca.</p>
+                                <p>— Equipo TuPenca</p>"
+                            );
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError(
+                                ex,
+                                "Error enviando rechazo por email para el sitio {SitioId} a {Email}",
+                                sitioDto.Id,
+                                usuario.Email);
+                        }
                     }
                 }
 
