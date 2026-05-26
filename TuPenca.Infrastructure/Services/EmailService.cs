@@ -28,7 +28,8 @@ namespace TuPenca.Infrastructure.Services
             using var smtp = new SmtpClient("smtp.gmail.com", 587)
             {
                 Credentials = new NetworkCredential(RemitenteMail, AppPassword),
-                EnableSsl = true
+                EnableSsl = true,
+                Timeout = 10000
             };
 
             await smtp.SendMailAsync(mensaje);

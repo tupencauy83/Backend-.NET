@@ -49,7 +49,8 @@ namespace TuPenca.API.Controllers
             }
             catch (Exception ex)
             {
-                return BadRequest(ex.Message);
+                // EF suele envolver el error real (ej: unique index) en InnerException.
+                return BadRequest(ex.InnerException?.Message ?? ex.Message);
             }
         }
 
@@ -121,24 +122,30 @@ namespace TuPenca.API.Controllers
                 await _authService.RegistrarUsuarioAsync(userRequest, response.Id);
 
                 // Enviar email con credenciales
-                try
+                _ = Task.Run(async () =>
                 {
-                    await _emailService.EnviarAsync(
-                        solicitarSitioDto.Email,
-                        "Bienvenido a TuPenca - Credenciales de tu sitio",
-                        $@"<h2>¡Tu sitio fue creado!</h2>
-                        <p>Hola {solicitarSitioDto.NombreUsuario},</p>
-                        <p>Tu sitio <strong>{solicitarSitioDto.Nombre}</strong> fue creado exitosamente.</p>
-                        <p>Tus credenciales de acceso como administrador del sitio:</p>
-                        <ul>
-                            <li><strong>Email:</strong> {solicitarSitioDto.Email}</li>
-                            <li><strong>Contraseña:</strong> {password}</li>
-                        </ul>
-                        <p>Te recomendamos cambiar la contraseña después del primer inicio de sesión.</p>
-                        <p>— Equipo TuPenca</p>"
-                    );
-                }
-                catch { /* Si falla el email, no bloquear la creación del sitio */ }
+                    try
+                    {
+                        await _emailService.EnviarAsync(
+                            solicitarSitioDto.Email,
+                            "Bienvenido a TuPenca - Credenciales de tu sitio",
+                            $@"<h2>¡Tu sitio fue creado!</h2>
+                            <p>Hola {solicitarSitioDto.NombreUsuario},</p>
+                            <p>Tu sitio <strong>{solicitarSitioDto.Nombre}</strong> fue creado exitosamente.</p>
+                            <p>Tus credenciales de acceso como administrador del sitio:</p>
+                            <ul>
+                                <li><strong>Email:</strong> {solicitarSitioDto.Email}</li>
+                                <li><strong>Contraseña:</strong> {password}</li>
+                            </ul>
+                            <p>Te recomendamos cambiar la contraseña después del primer inicio de sesión.</p>
+                            <p>— Equipo TuPenca</p>"
+                        );
+                    }
+                    catch
+                    {
+                        // Si falla o se cuelga el email, no bloquear la creación del sitio
+                    }
+                });
 
                 return Ok(response);
             }

@@ -14,7 +14,7 @@ namespace TuPenca.Infrastructure.Middleware
 
         public async Task Invoke(HttpContext context, AppDbContext db)
         {
-            var host = context.Request.Headers["X-Sitio"].FirstOrDefault() ?? context.Request.Host.Host;
+            var host = NormalizarHost(context.Request.Headers["X-Sitio"].FirstOrDefault() ?? context.Request.Host.Host);
 
             var sitio = await db.Sitios
                 .FirstOrDefaultAsync(t => t.UrlPropia == host);
@@ -25,6 +25,24 @@ namespace TuPenca.Infrastructure.Middleware
             }
 
             await _next(context);
+        }
+
+        private static string NormalizarHost(string? host)
+        {
+            if (string.IsNullOrWhiteSpace(host))
+                return string.Empty;
+
+            var valor = host.Trim().ToLowerInvariant();
+
+            if (Uri.TryCreate(valor, UriKind.Absolute, out var uri))
+                valor = uri.Host;
+            else if (Uri.TryCreate($"https://{valor}", UriKind.Absolute, out var uriConEsquema))
+                valor = uriConEsquema.Host;
+
+            if (valor.StartsWith("www."))
+                valor = valor[4..];
+
+            return valor;
         }
     }
 }

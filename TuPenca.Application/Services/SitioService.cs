@@ -75,11 +75,20 @@ namespace TuPenca.Application.Services
 
         public async Task<SitioResponseDto> SolicitarSitioAsync(SitioPendienteRequestDto sitioDto)
         {
+            var url = NormalizarHost(sitioDto.UrlPropia);
+            if (string.IsNullOrWhiteSpace(url))
+                throw new Exception("El dominio del sitio es obligatorio");
+
+            // UrlPropia es único. Chequeamos antes para devolver un mensaje claro.
+            var existentes = await _unitOfWork.Sitios.GetAllAsync();
+            if (existentes.Any(s => string.Equals(NormalizarHost(s.UrlPropia), url, StringComparison.OrdinalIgnoreCase)))
+                throw new Exception("Ese dominio ya está en uso. Elegí otro.");
+
             var sitio = new Sitio()
             {
                 Id = Guid.NewGuid(),
                 Nombre = sitioDto.Nombre,
-                UrlPropia = sitioDto.UrlPropia,
+                UrlPropia = url,
                 ConfiguracionSitio = sitioDto.ConfiguracionSitio,
                 ColorPrimario = sitioDto.ColorPrimario,
                 ColorSecundario = sitioDto.ColorSecundario,
@@ -96,6 +105,24 @@ namespace TuPenca.Application.Services
                 Nombre = sitio.Nombre,
                 Mensaje = "Solicitud de sitio creada exitosamente."
             };
+        }
+
+        private static string NormalizarHost(string? host)
+        {
+            if (string.IsNullOrWhiteSpace(host))
+                return string.Empty;
+
+            var valor = host.Trim().ToLowerInvariant();
+
+            if (Uri.TryCreate(valor, UriKind.Absolute, out var uri))
+                valor = uri.Host;
+            else if (Uri.TryCreate($"https://{valor}", UriKind.Absolute, out var uriConEsquema))
+                valor = uriConEsquema.Host;
+
+            if (valor.StartsWith("www."))
+                valor = valor[4..];
+
+            return valor;
         }
 
         public async Task<SitioResponseDto> ActualizarSitioPendienteAsync(SitioActualizarEstadoRequest sitioDto)
