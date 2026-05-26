@@ -125,36 +125,6 @@ namespace TuPenca.API.Controllers
                 
                 await _authService.RegistrarUsuarioAsync(userRequest, response.Id);
 
-                // Enviar email con credenciales
-                _ = Task.Run(async () =>
-                {
-                    try
-                    {
-                        await _emailService.EnviarAsync(
-                            solicitarSitioDto.Email,
-                            "Bienvenido a TuPenca - Credenciales de tu sitio",
-                            $@"<h2>¡Tu sitio fue creado!</h2>
-                            <p>Hola {solicitarSitioDto.NombreUsuario},</p>
-                            <p>Tu sitio <strong>{solicitarSitioDto.Nombre}</strong> fue creado exitosamente.</p>
-                            <p>Tus credenciales de acceso como administrador del sitio:</p>
-                            <ul>
-                                <li><strong>Email:</strong> {solicitarSitioDto.Email}</li>
-                                <li><strong>Contraseña:</strong> {password}</li>
-                            </ul>
-                            <p>Te recomendamos cambiar la contraseña después del primer inicio de sesión.</p>
-                            <p>— Equipo TuPenca</p>"
-                        );
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError(
-                            ex,
-                            "Error enviando credenciales por email para el sitio {SitioId} a {Email}",
-                            response.Id,
-                            solicitarSitioDto.Email);
-                    }
-                });
-
                 return Ok(response);
             }
             catch (Exception ex)
@@ -183,6 +153,46 @@ namespace TuPenca.API.Controllers
                     };
 
                     await _usuarioService.ActualizarEstadoAsync(usuarioDto);
+
+                    if (sitioDto.Estado == Domain.Enums.EstadoSitio.Activo)
+                    {
+                        var password = Guid.NewGuid().ToString()[..8];
+                        await _usuarioService.ActualizarPasswordAsync(new UsuarioActualizarPasswordRequestDto
+                        {
+                            Id = usuario.Id,
+                            Password = password,
+                            PasswordConfirm = password
+                        });
+
+                        _ = Task.Run(async () =>
+                        {
+                            try
+                            {
+                                await _emailService.EnviarAsync(
+                                    usuario.Email,
+                                    "Bienvenido a TuPenca - Credenciales de tu sitio",
+                                    $@"<h2>¡Tu sitio fue aprobado!</h2>
+                                    <p>Hola {usuario.Nombre},</p>
+                                    <p>Tu sitio <strong>{response.Nombre}</strong> fue aprobado exitosamente.</p>
+                                    <p>Tus credenciales de acceso como administrador del sitio:</p>
+                                    <ul>
+                                        <li><strong>Email:</strong> {usuario.Email}</li>
+                                        <li><strong>Contraseña:</strong> {password}</li>
+                                    </ul>
+                                    <p>Te recomendamos cambiar la contraseña después del primer inicio de sesión.</p>
+                                    <p>— Equipo TuPenca</p>"
+                                );
+                            }
+                            catch (Exception ex)
+                            {
+                                _logger.LogError(
+                                    ex,
+                                    "Error enviando credenciales por email para el sitio {SitioId} a {Email}",
+                                    sitioDto.Id,
+                                    usuario.Email);
+                            }
+                        });
+                    }
                 }
 
                 return Ok(response);
