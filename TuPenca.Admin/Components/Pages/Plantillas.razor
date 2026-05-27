@@ -17,11 +17,11 @@
     <div class="form-card">
         <div class="form-group">
             <label>Nombre</label>
-            <input @bind="form.Nombre" />
+            <input @bind="form.Nombre" required />
         </div>
         <div class="form-group">
             <label>Descripción</label>
-            <textarea @bind="form.Descripcion" rows="2"></textarea>
+            <textarea @bind="form.Descripcion" rows="2" required></textarea>
         </div>
         <div class="form-row">
             <div class="form-group">
@@ -151,6 +151,24 @@ else
         saving = true; formError = null;
         try
         {
+            if (string.IsNullOrWhiteSpace(form.Nombre))
+            {
+                formError = "El nombre de la plantilla es obligatorio.";
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(form.Descripcion))
+            {
+                formError = "La descripción de la plantilla es obligatoria.";
+                return;
+            }
+
+            if (form.EventoDeportivoId == Guid.Empty)
+            {
+                formError = "Seleccioná un evento deportivo.";
+                return;
+            }
+
             var nueva = await PlantillaService.CrearAsync(form);
             plantillas.Add(nueva);
             form = new()

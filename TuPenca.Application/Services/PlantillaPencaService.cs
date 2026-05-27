@@ -55,6 +55,12 @@ namespace TuPenca.Application.Services
 
         public async Task<PlantillaPencaResponseDto> CrearAsync(PlantillaPencaRequestDto dto)
         {
+            if (string.IsNullOrWhiteSpace(dto.Nombre))
+                throw new Exception("El nombre de la plantilla es obligatorio");
+
+            if (string.IsNullOrWhiteSpace(dto.Descripcion))
+                throw new Exception("La descripción de la plantilla es obligatoria");
+
             var evento = await _unitOfWork.EventosDeportivos.GetByIdAsync(dto.EventoDeportivoId);
             if (evento == null)
                 throw new Exception("Evento deportivo no encontrado");
