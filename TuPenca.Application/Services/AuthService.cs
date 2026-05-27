@@ -22,6 +22,13 @@ public class AuthService : IAuthService
 
     public async Task<LoginResponseDto?> LoginAsync(LoginRequestDto request, Guid? sitioId)
     {
+
+        Console.WriteLine("========== LOGIN REQUEST ==========");
+        Console.WriteLine($"SitioId: {sitioId}");
+        Console.WriteLine($"Email: {request.Email}");
+        Console.WriteLine($"Password SIN HASH: {request.Password}");
+
+
         // ¿Viene con SitioId? → es Usuario del sitio (común o admin de sitio)
         if (sitioId != null)
         {
@@ -35,7 +42,12 @@ public class AuthService : IAuthService
 
             if (resultado == PasswordVerificationResult.Failed)
                 return null;
-            
+
+            Console.WriteLine($"Usuario encontrado: {usuario.Email}");
+            Console.WriteLine($"Hash DB: {usuario.PasswordHash}");
+            Console.WriteLine($"Estado: {usuario.Estado}");
+            Console.WriteLine($"Rol: {usuario.Rol}");
+
             // VERIFICACION DE ESTADO DE USUARIO, SI ES PENDIENTE O RECHAZADO NO SE LOGUEA.
             if (usuario.Estado == EstadoUsuario.Pendiente)
                 throw new Exception("Tu cuenta está pendiente de aprobación por un administrador");
