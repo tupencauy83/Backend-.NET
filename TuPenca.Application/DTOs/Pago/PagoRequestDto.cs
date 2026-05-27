@@ -7,6 +7,5 @@ namespace TuPenca.Application.DTOs.Pago
     public class PagoRequestDto
     {
         public Guid PencaId { get; set; }
-        public int Monto { get; set; }
     }
 }

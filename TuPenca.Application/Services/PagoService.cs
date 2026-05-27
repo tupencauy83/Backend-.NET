@@ -34,6 +34,12 @@ namespace TuPenca.Application.Services
             if (penca.Estado != EstadoPenca.Abierta)
                 throw new Exception("La penca no está abierta para nuevos participantes");
 
+            var plantilla = await _unitOfWork.PlantillasPenca.GetByIdAsync(penca.PlantillaPencaId);
+            if (plantilla == null)
+                throw new Exception("Plantilla de la penca no encontrada");
+
+            int monto = plantilla.MontoEntrada;
+
             var pagos = await _unitOfWork.Pagos.GetAllAsync();
             var pagoExistente = pagos.FirstOrDefault(p =>
                 p.UsuarioId == usuarioId &&
@@ -47,9 +53,9 @@ namespace TuPenca.Application.Services
             var pago = new Pago
             {
                 Id = Guid.NewGuid(),
-                Monto = dto.Monto,
+                Monto = monto, // 👈
                 Fecha = DateTime.UtcNow,
-                Estado = EstadoPago.Pendiente, // 👈 ya no es Aprobado
+                Estado = EstadoPago.Pendiente,
                 UsuarioId = usuarioId,
                 PencaId = dto.PencaId
             };
@@ -69,7 +75,7 @@ namespace TuPenca.Application.Services
                     Title = $"Inscripción Penca - {penca.Nombre}",
                     Quantity = 1,
                     CurrencyId = "UYU", // 👈 pesos uruguayos, cambiá si es otro
-                    UnitPrice = dto.Monto,
+                    UnitPrice = monto,
                 }
             },
                 // El ExternalReference vincula el pago de MP con tu pago interno
@@ -128,8 +134,7 @@ namespace TuPenca.Application.Services
             {
                 pago.Estado = EstadoPago.Rechazado;
                 await _unitOfWork.SaveChangesAsync();
-            }
-        }
+            }}
 
         public async Task<bool> UsuarioPagoEnPencaAsync(Guid usuarioId, Guid pencaId)
         {
