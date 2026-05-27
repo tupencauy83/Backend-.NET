@@ -7,6 +7,7 @@ using TuPenca.Domain.Interfaces;
 
 public class AuthService : IAuthService
 {
+    private const string MensajePendienteAprobacion = "Tu cuenta está pendiente de aprobación por un administrador";
     private readonly IUnitOfWork _unitOfWork;
     private readonly IJwtService _jwtService;
     private readonly IFirebaseService _firebaseService;
@@ -104,6 +105,10 @@ public class AuthService : IAuthService
         if (sitioId == null)
             throw new Exception("No se pudo determinar el sitio");
 
+        var sitio = await _unitOfWork.Sitios.GetByIdAsync(sitioId.Value);
+        if (sitio == null)
+            throw new Exception("Sitio no encontrado");
+
         // Validar token con Firebase
         var decodedToken = await _firebaseService.VerifyTokenAsync(idToken);
 
@@ -118,9 +123,27 @@ public class AuthService : IAuthService
         var usuario = await _unitOfWork.Usuarios
             .GetByEmailAsync(email, sitioId.Value);
 
-        // Si no existe, crearlo automáticamente
+        if (sitio.TipoRegistro == TipoRegistro.Cerrada)
+            throw new Exception("Este sitio no acepta registros");
+
+        // Si no existe, crearlo respetando la política de registro del sitio
         if (usuario == null)
         {
+            if (sitio.TipoRegistro == TipoRegistro.Con_Invitacion)
+            {
+                var invitaciones = await _unitOfWork.Invitaciones.GetAllAsync();
+                var invitacion = invitaciones.FirstOrDefault(i =>
+                    i.EmailInvitado == email &&
+                    !i.Aceptada &&
+                    i.SitioId == sitioId.Value);
+
+                if (invitacion == null)
+                    throw new Exception("Este sitio requiere una invitación válida");
+
+                invitacion.Aceptada = true;
+                await _unitOfWork.Invitaciones.UpdateAsync(invitacion);
+            }
+
             usuario = new Usuario
             {
                 Id = Guid.NewGuid(),
@@ -129,7 +152,9 @@ public class AuthService : IAuthService
                 PasswordHash = "",
                 Rol = RolUsuario.UsuarioComun,
                 FechaRegistro = DateTime.UtcNow,
-                Estado = EstadoUsuario.Aprobado,
+                Estado = sitio.TipoRegistro == TipoRegistro.Abierta
+                    ? EstadoUsuario.Aprobado
+                    : EstadoUsuario.Pendiente,
                 ProveedorAuth = ProveedorAuth.Google,
                 SitioId = sitioId.Value
             };
@@ -139,7 +164,7 @@ public class AuthService : IAuthService
 
         // Validar estado
         if (usuario.Estado == EstadoUsuario.Pendiente)
-            throw new Exception("Tu cuenta está pendiente de aprobación");
+            throw new Exception(MensajePendienteAprobacion);
 
         if (usuario.Estado == EstadoUsuario.Rechazado)
             throw new Exception("Tu cuenta fue rechazada");
@@ -218,7 +243,7 @@ public class AuthService : IAuthService
 
         var mensaje = estadoInicial == EstadoUsuario.Aprobado
             ? "Registro exitoso"
-            : "Registro exitoso, pendiente de aprobación por un administrador";
+            : MensajePendienteAprobacion;
 
         return new RegistroResponseDto
         {
