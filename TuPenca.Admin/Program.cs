@@ -1,4 +1,3 @@
-using MercadoPago.Config;
 using Microsoft.EntityFrameworkCore;
 using TuPenca.Admin.Components;
 using TuPenca.Application.Interfaces.Services;
@@ -44,9 +43,6 @@ builder.Services.AddScoped<IFirebaseService, FirebaseService>();
 builder.Services.AddScoped<IUsuarioService, UsuarioService>();
 builder.Services.AddSingleton<IEmailService, EmailService>();
 
-
-// ─── MercadoPago Config de Prueba ─────────────────────────────
-MercadoPagoConfig.AccessToken = builder.Configuration["MercadoPago:AccessToken"];
 
 // ─── SitioProvider (null para admin plataforma) ───────────────
 builder.Services.AddHttpContextAccessor();

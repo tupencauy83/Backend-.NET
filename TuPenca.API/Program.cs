@@ -1,3 +1,4 @@
+using MercadoPago.Config;
 using FirebaseAdmin;
 using Google.Apis.Auth.OAuth2;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -88,6 +89,9 @@ builder.Services.AddSignalR(); // revisar la logica
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+// ─── MercadoPago Config de Prueba ─────────────────────────────
+MercadoPagoConfig.AccessToken = builder.Configuration["MercadoPago:AccessToken"];
 
 // ─── CORS ─────────────────────────────────────────────────────
 // Permite que el frontend y la app móvil consuman la API
