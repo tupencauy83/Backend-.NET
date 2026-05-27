@@ -1,11 +1,6 @@
-﻿using MercadoPago.Client.Payment;
-using MercadoPago.Client.Preference;
-using MercadoPago.Resource.Payment;
-using MercadoPago.Resource.Preference;
+﻿using Stripe;
+using Stripe.Checkout;
 using Microsoft.Extensions.Configuration;
-using System;
-using System.Collections.Generic;
-using System.Text;
 using TuPenca.Application.DTOs.Pago;
 using TuPenca.Application.Interfaces.Services;
 using TuPenca.Domain.Entities;
@@ -53,7 +48,7 @@ namespace TuPenca.Application.Services
             var pago = new Pago
             {
                 Id = Guid.NewGuid(),
-                Monto = monto, // 👈
+                Monto = monto,
                 Fecha = DateTime.UtcNow,
                 Estado = EstadoPago.Pendiente,
                 UsuarioId = usuarioId,
@@ -63,35 +58,40 @@ namespace TuPenca.Application.Services
             await _unitOfWork.Pagos.AddAsync(pago);
             await _unitOfWork.SaveChangesAsync();
 
-            // Generar preferencia de pago en MercadoPago
-            var baseUrl = _config["App:BaseUrl"]; // ej: "https://tuapp.com"
+            var baseUrl = _config["App:BaseUrl"];
 
-            var preferenceRequest = new PreferenceRequest
+            // Crear Stripe Checkout Session
+            var options = new SessionCreateOptions
             {
-                Items = new List<PreferenceItemRequest>
-            {
-                new PreferenceItemRequest
+                PaymentMethodTypes = new List<string> { "card" },
+                LineItems = new List<SessionLineItemOptions>
                 {
-                    Title = $"Inscripción Penca - {penca.Nombre}",
-                    Quantity = 1,
-                    CurrencyId = "UYU", // 👈 pesos uruguayos, cambiá si es otro
-                    UnitPrice = monto,
-                }
-            },
-                // El ExternalReference vincula el pago de MP con tu pago interno
-                ExternalReference = pago.Id.ToString(),
-                BackUrls = new PreferenceBackUrlsRequest
-                {
-                    Success = $"{baseUrl}/pago/exito",
-                    Failure = $"{baseUrl}/pago/error",
-                    Pending = $"{baseUrl}/pago/pendiente",
+                    new SessionLineItemOptions
+                    {
+                        PriceData = new SessionLineItemPriceDataOptions
+                        {
+                            Currency = "usd", // Stripe no soporta UYU, usamos USD para pruebas
+                            UnitAmount = monto * 100, // Stripe maneja centavos
+                            ProductData = new SessionLineItemPriceDataProductDataOptions
+                            {
+                                Name = $"Inscripción Penca - {penca.Nombre}",
+                            },
+                        },
+                        Quantity = 1,
+                    }
                 },
-                AutoReturn = "approved",
-                NotificationUrl = $"{baseUrl}/api/webhook/mercadopago",
+                Mode = "payment",
+                SuccessUrl = $"{baseUrl}/pago/exito?session_id={{CHECKOUT_SESSION_ID}}",
+                CancelUrl = $"{baseUrl}/pago/error",
+                // Vinculamos el pago interno con la session de Stripe
+                Metadata = new Dictionary<string, string>
+                {
+                    { "pagoId", pago.Id.ToString() }
+                }
             };
 
-            var client = new PreferenceClient();
-            var preference = await client.CreateAsync(preferenceRequest);
+            var service = new SessionService();
+            var session = await service.CreateAsync(options);
 
             return new PagoResponseDto
             {
@@ -101,40 +101,32 @@ namespace TuPenca.Application.Services
                 Monto = pago.Monto,
                 Estado = pago.Estado,
                 Fecha = pago.Fecha,
-                LinkPago = preference.InitPoint, // 👈 link para redirigir al usuario
-                PreferenceId = preference.Id      // 👈 útil para el frontend con Checkout Pro
+                LinkPago = session.Url,       // 👈 link para redirigir al usuario
+                PreferenceId = session.Id     // 👈 session id de Stripe
             };
         }
 
-        public async Task ProcesarWebhookAsync(string pagoMpId)
+        public async Task ProcesarWebhookAsync(string pagoId, string nuevoEstado)
         {
-            // Consultar el pago en la API de MP para obtener el ExternalReference
-            var client = new PaymentClient();
-            var pagoMp = await client.GetAsync(long.Parse(pagoMpId));
-
-            if (pagoMp == null)
-                throw new Exception("Pago no encontrado en MercadoPago");
-
-            // El ExternalReference es el Id de tu pago interno
-            if (!Guid.TryParse(pagoMp.ExternalReference, out var pagoId))
+            if (!Guid.TryParse(pagoId, out var pagoGuid))
                 return;
 
-            var pago = await _unitOfWork.Pagos.GetByIdAsync(pagoId);
+            var pago = await _unitOfWork.Pagos.GetByIdAsync(pagoGuid);
             if (pago == null)
                 return;
 
-            // Solo actualizar si el estado de MP es "approved"
-            if (pagoMp.Status == "approved" && pago.Estado != EstadoPago.Aprobado)
+            if (nuevoEstado == "approved" && pago.Estado != EstadoPago.Aprobado)
             {
                 pago.Estado = EstadoPago.Aprobado;
                 pago.Fecha = DateTime.UtcNow;
-                await _unitOfWork.SaveChangesAsync(); // EF ya sabe que pago cambió
+                await _unitOfWork.SaveChangesAsync();
             }
-            else if (pagoMp.Status == "rejected")
+            else if (nuevoEstado == "rejected")
             {
                 pago.Estado = EstadoPago.Rechazado;
                 await _unitOfWork.SaveChangesAsync();
-            }}
+            }
+        }
 
         public async Task<bool> UsuarioPagoEnPencaAsync(Guid usuarioId, Guid pencaId)
         {

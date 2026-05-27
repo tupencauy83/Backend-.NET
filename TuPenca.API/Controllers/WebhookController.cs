@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Text.Json;
+using Stripe;
 using TuPenca.Application.Interfaces.Services;
 
 namespace TuPenca.API.Controllers
@@ -10,56 +10,50 @@ namespace TuPenca.API.Controllers
     public class WebhookController : ControllerBase
     {
         private readonly IPagoService _pagoService;
+        private readonly IConfiguration _config;
         private readonly ILogger<WebhookController> _logger;
 
-        public WebhookController(IPagoService pagoService, ILogger<WebhookController> logger)
+        public WebhookController(IPagoService pagoService, IConfiguration config, ILogger<WebhookController> logger)
         {
             _pagoService = pagoService;
+            _config = config;
             _logger = logger;
         }
 
-        [HttpPost("mercadopago")]
-        [AllowAnonymous] // 👈 MP no manda token, debe ser público
-        public async Task<IActionResult> MercadoPagoWebhook()
+        [HttpPost("stripe")]
+        [AllowAnonymous]
+        public async Task<IActionResult> StripeWebhook()
         {
+            var json = await new StreamReader(HttpContext.Request.Body).ReadToEndAsync();
+            var webhookSecret = _config["Stripe:WebhookSecret"];
+
             try
             {
-                // MP envía el id del pago como query param o en el body
-                // Formato típico: ?id=123&topic=payment
-                var topic = Request.Query["topic"].ToString();
-                var id = Request.Query["id"].ToString();
+                // Stripe firma cada evento, esto verifica que sea legítimo
+                var stripeEvent = EventUtility.ConstructEvent(
+                    json,
+                    Request.Headers["Stripe-Signature"],
+                    webhookSecret
+                );
 
-                // También puede venir como JSON en el body (notificaciones v2)
-                if (string.IsNullOrEmpty(id))
+                if (stripeEvent.Type == "checkout.session.completed")
                 {
-                    using var reader = new StreamReader(Request.Body);
-                    var body = await reader.ReadToEndAsync();
-                    var json = JsonDocument.Parse(body);
+                    var session = stripeEvent.Data.Object as Stripe.Checkout.Session;
+                    if (session == null) return Ok();
 
-                    if (json.RootElement.TryGetProperty("data", out var data) &&
-                        data.TryGetProperty("id", out var dataId))
-                    {
-                        id = dataId.GetRawText().Trim('"');
-                        topic = "payment";
-                    }
+                    var pagoId = session.Metadata["pagoId"];
+                    var estado = session.PaymentStatus == "paid" ? "approved" : "rejected";
+
+                    await _pagoService.ProcesarWebhookAsync(pagoId, estado);
+                    _logger.LogInformation("Pago {pagoId} actualizado a {estado}", pagoId, estado);
                 }
 
-                _logger.LogInformation("Webhook MP recibido - topic: {topic}, id: {id}", topic, id);
-
-                // Solo procesar notificaciones de pagos
-                if (topic == "payment" && !string.IsNullOrEmpty(id))
-                {
-                    await _pagoService.ProcesarWebhookAsync(id);
-                }
-
-                // MP espera 200 OK, si no reintenta
                 return Ok();
             }
-            catch (Exception ex)
+            catch (StripeException ex)
             {
-                _logger.LogError(ex, "Error procesando webhook de MercadoPago");
-                // Igual devolvemos 200 para que MP no reintente en errores nuestros
-                return Ok();
+                _logger.LogError(ex, "Error verificando webhook de Stripe");
+                return BadRequest();
             }
         }
     }
