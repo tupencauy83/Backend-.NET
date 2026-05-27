@@ -144,9 +144,6 @@ public class AuthService : IAuthService
         if (usuario.Estado == EstadoUsuario.Rechazado)
             throw new Exception("Tu cuenta fue rechazada");
 
-        if (usuario.ProveedorAuth == ProveedorAuth.Local)
-            throw new Exception("Este usuario está registrado con email y contraseña. Usá el login normal.");
-
         // Generar JWT
         var rolClaim = usuario.Rol == RolUsuario.AdministradorSitio
             ? "AdministradorSitio"
