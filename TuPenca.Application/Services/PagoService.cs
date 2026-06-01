@@ -81,7 +81,7 @@ namespace TuPenca.Application.Services
                     }
                 },
                 Mode = "payment",
-                SuccessUrl = $"{baseUrl}/pago/exito?session_id={{CHECKOUT_SESSION_ID}}",
+                SuccessUrl = "https://frontend-react-beta-green.vercel.app",
                 CancelUrl = $"{baseUrl}/pago/error",
                 // Vinculamos el pago interno con la session de Stripe
                 Metadata = new Dictionary<string, string>
