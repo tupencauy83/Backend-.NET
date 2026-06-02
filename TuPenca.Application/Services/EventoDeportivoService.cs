@@ -12,11 +12,15 @@ namespace TuPenca.Application.Services
     public class EventoDeportivoService : IEventoDeportivoService
     {
         private readonly IUnitOfWork _unitOfWork;
+        private readonly ISportsApiService _sportsApiService;
 
 
-        public EventoDeportivoService(IUnitOfWork unitOfWork)
+        public EventoDeportivoService(
+            IUnitOfWork unitOfWork,
+            ISportsApiService sportsApiService)
         {
             _unitOfWork = unitOfWork;
+            _sportsApiService = sportsApiService;
         }
 
         public async Task<IEnumerable<EventoDeportivoResponseDto>> ObtenerTodosAsync()
@@ -213,6 +217,60 @@ namespace TuPenca.Application.Services
                 GolesVisitante = dto.GolesVisitante,
                 UsuariosActualizados = usuariosActualizados
             };
+        }
+
+        // Para consumir API Externa de resultados
+
+        public async Task<ResultadoResponseDto> SincronizarPartidoAsync(Guid partidoId)
+        {
+            // Buscar partido
+            var partido = await _unitOfWork.Partidos.GetByIdAsync(partidoId);
+
+            if (partido == null)
+                throw new Exception("Partido no encontrado");
+
+            // Verificar que tenga vinculación con API
+            if (string.IsNullOrWhiteSpace(partido.ExternalMatchId))
+                throw new Exception("El partido no tiene ExternalMatchId configurado");
+
+            // Consultar proveedor externo
+            var resultadoApi = await _sportsApiService
+                .ObtenerResultadoAsync(partido.ExternalMatchId);
+
+            if (resultadoApi == null)
+                throw new Exception("No se pudo obtener información desde TheSportsDB");
+
+            // Verificar si el partido terminó
+            if (!resultadoApi.Finalizado)
+                throw new Exception("El partido todavía no ha finalizado");
+
+            // Determinar ganador automáticamente
+            Guid? ganadorId = null;
+
+            if (resultadoApi.GolesLocal > resultadoApi.GolesVisitante)
+            {
+                ganadorId = partido.EquipoLocalId;
+            }
+            else if (resultadoApi.GolesVisitante > resultadoApi.GolesLocal)
+            {
+                ganadorId = partido.EquipoVisitanteId;
+            }
+
+            if (partido.ResultadoLocal.HasValue ||
+    partido.ResultadoVisitante.HasValue)
+            {
+                throw new Exception("El partido ya tiene resultado cargado");
+            }
+
+            // Reutilizar toda la lógica existente
+            return await CargarResultadoAsync(
+                new ResultadoRequestDto
+                {
+                    PartidoId = partido.Id,
+                    GolesLocal = resultadoApi.GolesLocal,
+                    GolesVisitante = resultadoApi.GolesVisitante,
+                    EquipoGanadorId = ganadorId
+                });
         }
 
     }

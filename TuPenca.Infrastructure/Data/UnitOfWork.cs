@@ -16,7 +16,7 @@ namespace TuPenca.Infrastructure.Data
         public IAdministradorRepository Administrador { get; }
         public IRepository<Sitio> Sitios { get; }
         public IPencaRepository Pencas { get; }
-        public IRepository<Partido> Partidos { get; }
+        public IPartidoRepository Partidos { get; }
         public IPrediccionRepository Predicciones { get; }
         public IPuntajeUsuarioRepository PuntajesUsuario { get; }
         public IPremioRepository Premios { get; }
@@ -31,14 +31,14 @@ namespace TuPenca.Infrastructure.Data
         public IRepository<TipoCompetencia> TiposCompetencia { get; }
 
         public UnitOfWork(AppDbContext context, IUsuarioRepository usuarios, IAdministradorRepository administradores, IPlantillaPencaRepository plantillaPenca, 
-            IPencaRepository pencas, IPrediccionRepository Prediccion, IPuntajeUsuarioRepository PuntajesUsuarios, IPremioRepository Premio)
+            IPencaRepository pencas, IPrediccionRepository Prediccion, IPuntajeUsuarioRepository PuntajesUsuarios, IPremioRepository Premio, IPartidoRepository partidos)
         {
             _context = context;
             Usuarios = usuarios;
             Administrador = administradores;
             Sitios = new Repository<Sitio>(context);
             Pencas = pencas;
-            Partidos = new Repository<Partido>(context);
+            Partidos = partidos;
             Predicciones = Prediccion;
             PuntajesUsuario = PuntajesUsuarios;
             Premios = Premio;

@@ -33,5 +33,9 @@ namespace TuPenca.Domain.Entities
 
         // 1 Partido → N Predicciones
         public ICollection<Prediccion> Predicciones { get; set; } = new List<Prediccion>();
+
+        // Atributo para carga de resultados mediante API de proveedores
+
+        public string? ExternalMatchId { get; set; }
     }
 }

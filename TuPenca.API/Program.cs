@@ -59,6 +59,7 @@ builder.Services.AddScoped<IPencaRepository, PencaRepository>();
 builder.Services.AddScoped<IPrediccionRepository, PrediccionRepository>();
 builder.Services.AddScoped<IPuntajeUsuarioRepository, PuntajeUsuarioRepository>();
 builder.Services.AddScoped<IPremioRepository, PremioRepository>();
+builder.Services.AddScoped<IPartidoRepository, PartidoRepository>();
 
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IJwtService, JwtService>();
@@ -77,6 +78,13 @@ builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
 builder.Services.AddScoped<IFirebaseService, FirebaseService>();
 builder.Services.AddSingleton<IEmailService, EmailService>();
+
+
+// ─── Para Consultar API de Resultados Externa ───────────────────────────────────────────────
+
+builder.Services.AddHttpClient<
+    ISportsApiService,
+    TheSportsDbService>();
 
 // ─── AutoMapper ───────────────────────────────────────────────
 //builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies()); 

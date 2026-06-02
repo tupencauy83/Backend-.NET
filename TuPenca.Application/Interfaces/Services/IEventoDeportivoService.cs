@@ -15,5 +15,7 @@ namespace TuPenca.Application.Interfaces.Services
 
         // Para calculo de resultados
         Task<ResultadoResponseDto> CargarResultadoAsync(ResultadoRequestDto dto);
+
+        Task<ResultadoResponseDto> SincronizarPartidoAsync(Guid partidoId);
     }
 }
