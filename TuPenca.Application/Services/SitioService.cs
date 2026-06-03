@@ -302,17 +302,30 @@ namespace TuPenca.Application.Services
         public async Task<SitioResponseDto> ActualizarSitioAsync(SitioRequestDto sitioDto)
         {
             var sitio = await _unitOfWork.Sitios.GetByIdAsync(sitioDto.Id);
+
             if (sitio == null)
                 return new SitioResponseDto { Mensaje = "Sitio no encontrado" };
 
-            sitio.Nombre = sitioDto.Nombre;
-            sitio.UrlPropia = sitioDto.UrlPropia;
-            sitio.ConfiguracionSitio = sitioDto.ConfiguracionSitio;
-            sitio.ColorPrimario = sitioDto.ColorPrimario;
-            sitio.ColorSecundario = sitioDto.ColorSecundario;
-            sitio.TipoRegistro = sitioDto.TipoRegistro;
-            sitio.Estado = sitio.Estado;
-            sitio.Logo = sitio.Logo;
+            if (!string.IsNullOrWhiteSpace(sitioDto.Nombre))
+                sitio.Nombre = sitioDto.Nombre;
+
+            if (!string.IsNullOrWhiteSpace(sitioDto.UrlPropia))
+                sitio.UrlPropia = sitioDto.UrlPropia;
+
+            if (!string.IsNullOrWhiteSpace(sitioDto.ConfiguracionSitio))
+                sitio.ConfiguracionSitio = sitioDto.ConfiguracionSitio;
+
+            if (!string.IsNullOrWhiteSpace(sitioDto.ColorPrimario))
+                sitio.ColorPrimario = sitioDto.ColorPrimario;
+
+            if (!string.IsNullOrWhiteSpace(sitioDto.ColorSecundario))
+                sitio.ColorSecundario = sitioDto.ColorSecundario;
+
+            if (sitioDto.Logo != null)
+                sitio.Logo = sitioDto.Logo;
+
+            // TipoRegistro intentionally omitted
+            sitio.Estado = sitioDto.Estado;
 
             await _unitOfWork.Sitios.UpdateAsync(sitio);
             await _unitOfWork.SaveChangesAsync();
