@@ -73,6 +73,8 @@ builder.Services.AddScoped<IPencaService, PencaService>();
 builder.Services.AddScoped<IPrediccionService, PrediccionService>();
 builder.Services.AddScoped<IEstadisticasService, EstadisticasService>();
 builder.Services.AddScoped<IInvitacionService, InvitacionService>();
+builder.Services.AddSingleton<ISportsApiService, TheSportsDbService>();
+
 
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
