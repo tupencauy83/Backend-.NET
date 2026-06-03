@@ -27,6 +27,7 @@ builder.Services.AddScoped<IPencaRepository, PencaRepository>();
 builder.Services.AddScoped<IPrediccionRepository, PrediccionRepository>();
 builder.Services.AddScoped<IPuntajeUsuarioRepository, PuntajeUsuarioRepository>();
 builder.Services.AddScoped<IPremioRepository, PremioRepository>();
+builder.Services.AddScoped<IPartidoRepository, PartidoRepository>();
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
 // ─── Servicios de Application ─────────────────────────────────
