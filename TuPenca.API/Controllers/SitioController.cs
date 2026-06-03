@@ -74,14 +74,17 @@ namespace TuPenca.API.Controllers
         [HttpGet("actual/{sitioId}")]
         public async Task<IActionResult> ObtenerColoresYLogoSitioActualAsync(Guid sitioId)
         {
-            var sitios = await _sitioService.ObtenerSitiosAsync();
+            var sitio = await _sitioService.ObtenerSitioAsync(sitioId);
 
-            var result = sitios.Select(s => new
+            if (sitio == null)
+                return NotFound();
+
+            var result = new
             {
-                s.ColorPrimario,
-                s.ColorSecundario,
-                s.Logo
-            });
+                sitio.ColorPrimario,
+                sitio.ColorSecundario,
+                sitio.Logo
+            };
 
             return Ok(result);
         }
