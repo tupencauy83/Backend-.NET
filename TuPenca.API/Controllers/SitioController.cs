@@ -71,6 +71,21 @@ namespace TuPenca.API.Controllers
             }
         }
 
+        [HttpGet("actual/{sitioId}")]
+        public async Task<IActionResult> ObtenerColoresYLogoSitioActualAsync(Guid sitioId)
+        {
+            var sitios = await _sitioService.ObtenerSitiosAsync();
+
+            var result = sitios.Select(s => new
+            {
+                s.ColorPrimario,
+                s.ColorSecundario,
+                s.Logo
+            });
+
+            return Ok(result);
+        }
+
         [HttpGet("obtener/pendientes")]
         [Authorize(Roles = "AdministradorPlataforma")]
         public async Task<IActionResult> ObtenerSitiosPendientesAsync()

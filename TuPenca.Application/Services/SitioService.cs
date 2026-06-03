@@ -325,7 +325,7 @@ namespace TuPenca.Application.Services
                 sitio.Logo = sitioDto.Logo;
 
             // TipoRegistro intentionally omitted
-            sitio.Estado = sitioDto.Estado;
+            sitio.Estado = sitio.Estado;
 
             await _unitOfWork.Sitios.UpdateAsync(sitio);
             await _unitOfWork.SaveChangesAsync();
