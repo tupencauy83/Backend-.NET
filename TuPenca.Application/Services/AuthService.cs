@@ -23,12 +23,6 @@ public class AuthService : IAuthService
     public async Task<LoginResponseDto?> LoginAsync(LoginRequestDto request, Guid? sitioId)
     {
 
-        Console.WriteLine("========== LOGIN REQUEST ==========");
-        Console.WriteLine($"SitioId: {sitioId}");
-        Console.WriteLine($"Email: {request.Email}");
-        Console.WriteLine($"Password SIN HASH: {request.Password}");
-
-
         // ¿Viene con SitioId? → es Usuario del sitio (común o admin de sitio)
         if (sitioId != null)
         {

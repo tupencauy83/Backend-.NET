@@ -35,5 +35,9 @@ namespace TuPenca.Domain.Entities
 
         // 1 Usuario → N Notificaciones
         public ICollection<Notificacion> Notificaciones { get; set; } = new List<Notificacion>();
+
+        // Token para notificaciones push de firebase, almacenamos el token del dispositivo mobile para mandarle
+        // notificaciones personales
+        public string? FcmToken { get; set; } = null;
     }
 }

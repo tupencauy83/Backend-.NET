@@ -3,6 +3,7 @@ using TuPenca.Application.DTOs.Usuario;
 using TuPenca.Application.Interfaces.Services;
 using TuPenca.Domain.Enums;
 using TuPenca.Domain.Interfaces;
+using TuPenca.Domain.Interfaces.Repositories;
 
 namespace TuPenca.Application.Services
 {
@@ -120,6 +121,17 @@ namespace TuPenca.Application.Services
                 Nombre = usuario.Nombre,
                 Mensaje = "Password de usuario actualizado exitosamente"
             };
+        }
+
+        public async Task RegistrarFcmTokenAsync(Guid usuarioId, string fcmToken)
+        {
+            var usuario = await _unitOfWork.Usuarios.GetByIdAsync(usuarioId);
+            if (usuario == null)
+                throw new Exception("Usuario no encontrado.");
+
+            usuario.FcmToken = fcmToken;
+            await _unitOfWork.Usuarios.UpdateAsync(usuario);
+            await _unitOfWork.SaveChangesAsync(); // or however you commit in your service layer
         }
 
         public string HashPassword(string password) => _hasher.HashPassword(null!, password);
