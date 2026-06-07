@@ -16,6 +16,7 @@ using TuPenca.Infrastructure.Data.Repositories;
 using TuPenca.Infrastructure.Interfaces.Providers;
 using TuPenca.Infrastructure.Middleware;
 using TuPenca.Infrastructure.Providers;
+using TuPenca.API.Hubs;
 // using TuPenca.Infrastructure.Data;
 // revisar si es necesario
 
@@ -44,6 +45,24 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidAudience = builder.Configuration["Jwt:Audience"],
             IssuerSigningKey = new SymmetricSecurityKey(
                 Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!))
+        };
+
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                var accessToken = context.Request.Query["access_token"];
+
+                var path = context.HttpContext.Request.Path;
+
+                if (!string.IsNullOrEmpty(accessToken) &&
+                    path.StartsWithSegments("/hubs/chat"))
+                {
+                    context.Token = accessToken;
+                }
+
+                return Task.CompletedTask;
+            }
         };
     });
 
@@ -107,10 +126,25 @@ StripeConfiguration.ApiKey = builder.Configuration["Stripe:SecretKey"];
 // Permite que el frontend y la app móvil consuman la API
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowAll", policy =>
-        policy.AllowAnyOrigin()
-              .AllowAnyMethod()
-              .AllowAnyHeader());
+    options.AddPolicy("TenantCors", policy =>
+    {
+        policy
+            .SetIsOriginAllowed(origin =>
+            {
+                if (string.IsNullOrWhiteSpace(origin))
+                    return false;
+
+                var uri = new Uri(origin);
+
+                if (uri.Host == "localhost" || uri.Host == "127.0.0.1")
+                    return true;
+
+                return uri.Scheme == "https";
+            })
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials();
+    });
 });
 
 // ─── Servicios de Application ────────────────────────────────
@@ -144,15 +178,6 @@ FirebaseApp.Create(new AppOptions
 
 var app = builder.Build();
 
-//using (var scope = app.Services.CreateScope())
-//{
-//    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-//    db.Database.Migrate();
-//}
-
-// ─── Middleware ───────────────────────────────────────────────
-app.UseMiddleware<SitioResolverMiddleware>();
-
 // ─── Middleware pipeline ──────────────────────────────────────
 //if (app.Environment.IsDevelopment())
 //{
@@ -161,13 +186,21 @@ app.UseMiddleware<SitioResolverMiddleware>();
 //}
 
 app.UseHttpsRedirection();
-app.UseCors("AllowAll");
+
+//app.UseCors("AllowAll");
+app.UseCors("TenantCors");
+
 app.UseAuthentication();   // siempre antes de Authorization
+
+// ─── Middleware ───────────────────────────────────────────────
+app.UseMiddleware<SitioResolverMiddleware>();
+
 app.UseAuthorization();
 
 app.MapControllers();
 
 // ─── SignalR Hubs ─────────────────────────────────────────────
 // app.MapHub<ResultadosHub>("/hubs/resultados");
+app.MapHub<ChatHub>("/hubs/chat");
 
 app.Run();

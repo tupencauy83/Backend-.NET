@@ -6,15 +6,17 @@ namespace TuPenca.Domain.Entities
 {
     public class MensajeChat : BaseEntity
     {
-        public string Contenido { get; set; } = null!;
-        public DateTime FechaHora { get; set; } = DateTime.UtcNow;
+        public Guid Id { get; set; }
 
-        // N Mensajes → 1 Usuario (autor)
+        public Guid PencaId { get; set; }
         public Guid UsuarioId { get; set; }
+
+        public string Mensaje { get; set; } = string.Empty;
+
+        public DateTime FechaCreacion { get; set; }
+
+        public Penca Penca { get; set; } = null!;
         public Usuario Usuario { get; set; } = null!;
 
-        // N Mensajes → 1 Penca (foro de esa penca)
-        public Guid PencaId { get; set; }
-        public Penca Penca { get; set; } = null!;
     }
 }

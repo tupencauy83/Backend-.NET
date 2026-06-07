@@ -1,0 +1,130 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+	<meta charset="UTF-8" />
+	<title>Test Chat SignalR - TuPenca</title>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.7/signalr.min.js"></script>
+
+	<style>
+		body {
+			font-family: Arial;
+			max-width: 800px;
+			margin: 30px auto;
+		}
+
+		input, textarea, button {
+			width: 100%;
+			margin: 6px 0;
+			padding: 8px;
+		}
+
+		button {
+			cursor: pointer;
+		}
+
+		#mensajes {
+			border: 1px solid #ccc;
+			height: 300px;
+			overflow-y: auto;
+			padding: 10px;
+			margin-top: 10px;
+		}
+
+		.msg {
+			margin-bottom: 8px;
+			padding: 6px;
+			background: #f1f1f1;
+			border-radius: 5px;
+		}
+	</style>
+</head>
+
+<body>
+	<h2>Test Chat SignalR - TuPenca</h2>
+
+	<label>URL API</label>
+	<input id="apiUrl" value="https://localhost:7000" />
+
+	<label>JWT</label>
+	<textarea id="token" rows="4" placeholder="Pegá el token JWT acá"></textarea>
+
+	<label>PencaId</label>
+	<input id="pencaId" placeholder="GUID de la penca" />
+
+	<button onclick="conectar()">1. Conectar</button>
+	<button onclick="unirseAPenca()">2. Unirse a Penca</button>
+	<button onclick="salirDePenca()">Salir de Penca</button>
+
+	<hr>
+
+	<label>Mensaje</label>
+	<input id="mensaje" placeholder="Escribí un mensaje" />
+
+	<button onclick="enviarMensaje()">Enviar mensaje</button>
+
+	<h3>Mensajes recibidos</h3>
+	<div id="mensajes"></div>
+
+	<script>
+		let connection = null;
+
+		function agregarMensaje(texto) {
+			const contenedor = document.getElementById("mensajes");
+			const div = document.createElement("div");
+			div.className = "msg";
+			div.innerText = texto;
+			contenedor.appendChild(div);
+			contenedor.scrollTop = contenedor.scrollHeight;
+		}
+
+		async function conectar() {
+			const apiUrl = document.getElementById("apiUrl").value;
+			const token = document.getElementById("token").value;
+
+			connection = new signalR.HubConnectionBuilder()
+				.withUrl(`${apiUrl}/hubs/chat`, {
+					accessTokenFactory: () => token
+				})
+				.withAutomaticReconnect()
+				.build();
+
+			connection.on("RecibirMensaje", (msg) => {
+				console.log("Mensaje recibido:", msg);
+
+				agregarMensaje(
+					`${msg.usuarioNombre ?? msg.UsuarioNombre ?? "Usuario"}: ${msg.mensaje ?? msg.Mensaje}`
+				);
+			});
+
+			await connection.start();
+
+			agregarMensaje("Conectado a SignalR");
+		}
+
+		async function unirseAPenca() {
+			const pencaId = document.getElementById("pencaId").value;
+
+			await connection.invoke("UnirseAPenca", pencaId);
+
+			agregarMensaje("Unido a la penca " + pencaId);
+		}
+
+		async function salirDePenca() {
+			const pencaId = document.getElementById("pencaId").value;
+
+			await connection.invoke("SalirDePenca", pencaId);
+
+			agregarMensaje("Saliste de la penca " + pencaId);
+		}
+
+		async function enviarMensaje() {
+			const pencaId = document.getElementById("pencaId").value;
+			const mensaje = document.getElementById("mensaje").value;
+
+			await connection.invoke("EnviarMensaje", pencaId, mensaje);
+
+			document.getElementById("mensaje").value = "";
+		}
+	</script>
+</body>
+</html>

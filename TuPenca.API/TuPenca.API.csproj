@@ -13,13 +13,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Remove="Hubs\**" />
     <Compile Remove="Middleware\**" />
-    <Content Remove="Hubs\**" />
     <Content Remove="Middleware\**" />
-    <EmbeddedResource Remove="Hubs\**" />
     <EmbeddedResource Remove="Middleware\**" />
-    <None Remove="Hubs\**" />
     <None Remove="Middleware\**" />
   </ItemGroup>
 
