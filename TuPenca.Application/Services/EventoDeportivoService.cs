@@ -273,5 +273,30 @@ namespace TuPenca.Application.Services
                 });
         }
 
+        public async Task<int> SincronizarPartidosPendientesAsync()
+        {
+            var partidos =
+                await _unitOfWork.Partidos
+                    .ObtenerPendientesConExternalMatchIdAsync();
+
+            int sincronizados = 0;
+
+            foreach (var partido in partidos)
+            {
+                try
+                {
+                    await SincronizarPartidoAsync(partido.Id);
+                    sincronizados++;
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(
+                        $"Error sincronizando partido {partido.Id}: {ex.Message}");
+                }
+            }
+
+            return sincronizados;
+        }
+
     }
 }

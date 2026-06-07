@@ -92,6 +92,9 @@ builder.Services.AddHttpClient<
 //builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies()); 
 //revisar pq da error
 
+// ─── Service para actualizar automaticamente resultados de partidos ───
+builder.Services.AddHostedService<ResultadoSyncBackgroundService>();
+
 // ─── SignalR ──────────────────────────────────────────────────
 builder.Services.AddSignalR(); // revisar la logica
 
