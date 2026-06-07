@@ -45,6 +45,9 @@ builder.Services.AddScoped<IUsuarioService, UsuarioService>();
 builder.Services.AddSingleton<IEmailService, EmailService>();
 builder.Services.AddHttpClient<ISportsApiService, TheSportsDbService>();
 
+// ─── Service para actualizar automaticamente resultados de partidos ───
+builder.Services.AddHostedService<ResultadoSyncBackgroundService>();
+
 
 // ─── SitioProvider (null para admin plataforma) ───────────────
 builder.Services.AddHttpContextAccessor();
