@@ -92,6 +92,7 @@ builder.Services.AddScoped<IPencaService, PencaService>();
 builder.Services.AddScoped<IPrediccionService, PrediccionService>();
 builder.Services.AddScoped<IEstadisticasService, EstadisticasService>();
 builder.Services.AddScoped<IInvitacionService, InvitacionService>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddHttpClient<ISportsApiService, TheSportsDbService>();
 
 
