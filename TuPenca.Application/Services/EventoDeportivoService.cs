@@ -13,14 +13,17 @@ namespace TuPenca.Application.Services
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly ISportsApiService _sportsApiService;
+        private readonly INotificationService _notificationService;
 
 
         public EventoDeportivoService(
             IUnitOfWork unitOfWork,
-            ISportsApiService sportsApiService)
+            ISportsApiService sportsApiService,
+            INotificationService notificationService)
         {
             _unitOfWork = unitOfWork;
             _sportsApiService = sportsApiService;
+            _notificationService = notificationService;
         }
 
         public async Task<IEnumerable<EventoDeportivoResponseDto>> ObtenerTodosAsync()
@@ -119,7 +122,8 @@ namespace TuPenca.Application.Services
                 Fase = dto.Fase,
                 EquipoLocalId = dto.EquipoLocalId,
                 EquipoVisitanteId = dto.EquipoVisitanteId,
-                EventoDeportivoId = dto.EventoDeportivoId
+                EventoDeportivoId = dto.EventoDeportivoId,
+                ExternalMatchId = dto.ExternalMatchId
             };
 
             await _unitOfWork.Partidos.AddAsync(partido);
@@ -201,7 +205,25 @@ namespace TuPenca.Application.Services
                 }
 
                 usuariosActualizados++;
+
+                // NOTIFICACION DE PARTIDO FINALIZADO Y RESULTADO CARGADO
+                var usuario = await _unitOfWork.Usuarios.GetByIdAsync(prediccion.UsuarioId);
+                if (usuario != null
+                    && usuario.NotifResultadoPartido
+                    && !string.IsNullOrEmpty(usuario.FcmToken))
+                {
+                    var equipoLocalNombre = (await _unitOfWork.Equipos.GetByIdAsync(partido.EquipoLocalId))?.Nombre ?? "";
+                    var equipoVisitanteNombre = (await _unitOfWork.Equipos.GetByIdAsync(partido.EquipoVisitanteId))?.Nombre ?? "";
+
+                    await _notificationService.EnviarAsync(
+                        usuario.FcmToken,
+                        "Resultado cargado 🏆",
+                        $"{equipoLocalNombre} {dto.GolesLocal} - {dto.GolesVisitante} {equipoVisitanteNombre}. Obtuviste {puntos} puntos."
+                    );
+                }
             }
+
+
 
             await _unitOfWork.SaveChangesAsync();
 

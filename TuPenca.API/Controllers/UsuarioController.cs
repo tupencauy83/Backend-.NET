@@ -118,6 +118,27 @@ namespace TuPenca.API.Controllers
         }
 
 
+        [HttpPost("notificaciones/preferencias")]
+        [Authorize(Roles = "UsuarioComun")]
+        public async Task<IActionResult> ActualizarPreferenciasNotificacionAsync([FromBody] ActualizarPreferenciasNotificacionRequestDto request)
+        {
+            try
+            {
+                var usuarioIdClaim = User.FindFirst("sub")?.Value;
+                if (usuarioIdClaim == null)
+                    return Unauthorized();
+
+                var usuarioId = Guid.Parse(usuarioIdClaim);
+                await _usuarioService.ActualizarPreferenciasNotificacionAsync(usuarioId, request);
+                return Ok();
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+
 
     }
 }

@@ -134,6 +134,20 @@ namespace TuPenca.Application.Services
             await _unitOfWork.SaveChangesAsync(); // or however you commit in your service layer
         }
 
+        public async Task ActualizarPreferenciasNotificacionAsync(Guid usuarioId, ActualizarPreferenciasNotificacionRequestDto dto)
+        {
+            var usuario = await _unitOfWork.Usuarios.GetByIdAsync(usuarioId);
+            if (usuario == null)
+                throw new Exception("Usuario no encontrado.");
+
+            usuario.NotifRecordatorioPrediccion = dto.NotifRecordatorioPrediccion;
+            usuario.NotifResultadoPartido = dto.NotifResultadoPartido;
+            usuario.NotifResumenSemanal = dto.NotifResumenSemanal;
+
+            await _unitOfWork.Usuarios.UpdateAsync(usuario);
+            await _unitOfWork.SaveChangesAsync();
+        }
+
         public string HashPassword(string password) => _hasher.HashPassword(null!, password);
     }
 }

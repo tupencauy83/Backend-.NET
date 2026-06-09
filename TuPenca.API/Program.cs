@@ -113,6 +113,8 @@ builder.Services.AddHttpClient<
 
 // ─── Service para actualizar automaticamente resultados de partidos ───
 builder.Services.AddHostedService<ResultadoSyncBackgroundService>();
+builder.Services.AddHostedService<RecordatorioPrediccionBackgroundService>();
+builder.Services.AddHostedService<ResumenSemanalBackgroundService>();
 
 // ─── SignalR ──────────────────────────────────────────────────
 builder.Services.AddSignalR(); // revisar la logica

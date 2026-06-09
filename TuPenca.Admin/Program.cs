@@ -47,6 +47,8 @@ builder.Services.AddHttpClient<ISportsApiService, TheSportsDbService>();
 
 // ─── Service para actualizar automaticamente resultados de partidos ───
 builder.Services.AddHostedService<ResultadoSyncBackgroundService>();
+builder.Services.AddHostedService<RecordatorioPrediccionBackgroundService>();
+builder.Services.AddHostedService<ResumenSemanalBackgroundService>();
 
 
 // ─── SitioProvider (null para admin plataforma) ───────────────
