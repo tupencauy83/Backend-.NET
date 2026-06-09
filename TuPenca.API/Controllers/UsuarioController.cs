@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 using TuPenca.Application.DTOs.Usuario;
 using TuPenca.Application.Interfaces.Services;
 using TuPenca.Infrastructure.Interfaces.Providers;
@@ -103,12 +104,11 @@ namespace TuPenca.API.Controllers
         {
             try
             {
-                var usuarioIdClaim = User.FindFirst("sub")?.Value;
+                var usuarioIdClaim = Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
                 if (usuarioIdClaim == null)
                     return Unauthorized();
 
-                var usuarioId = Guid.Parse(usuarioIdClaim);
-                await _usuarioService.RegistrarFcmTokenAsync(usuarioId, request.FcmToken);
+                await _usuarioService.RegistrarFcmTokenAsync(usuarioIdClaim, request.FcmToken);
                 return Ok();
             }
             catch (Exception ex)
@@ -124,12 +124,11 @@ namespace TuPenca.API.Controllers
         {
             try
             {
-                var usuarioIdClaim = User.FindFirst("sub")?.Value;
+                var usuarioIdClaim = Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
                 if (usuarioIdClaim == null)
                     return Unauthorized();
 
-                var usuarioId = Guid.Parse(usuarioIdClaim);
-                await _usuarioService.ActualizarPreferenciasNotificacionAsync(usuarioId, request);
+                await _usuarioService.ActualizarPreferenciasNotificacionAsync(usuarioIdClaim, request);
                 return Ok();
             }
             catch (Exception ex)

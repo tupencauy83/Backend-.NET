@@ -13,5 +13,6 @@ namespace TuPenca.Application.DTOs.Prediccion
         public int GolesLocal { get; set; }
         public int GolesVisitante { get; set; }
         public DateTime FechaPartido { get; set; }
+        public bool TienePrediccion { get; set; } // para diferenciar los partidos ya con prediccion del usuario de los que no.
     }
 }

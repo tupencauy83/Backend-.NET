@@ -47,5 +47,28 @@ namespace TuPenca.API.Controllers
                 return BadRequest(ex.Message);
             }
         }
+
+
+
+        [HttpGet("mis-predicciones/{pencaId}")]
+        [Authorize(Roles = "UsuarioComun")]
+        public async Task<IActionResult> ObtenerMisPrediccionesYTodosLosPartidos(Guid pencaId)
+        {
+            try
+            {
+                var usuarioId = Guid.Parse(
+                    User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+
+                var resultado = await _prediccionService
+                    .ObtenerMisPrediccionesAsync(usuarioId, pencaId);
+
+                return Ok(resultado);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
     }
 }

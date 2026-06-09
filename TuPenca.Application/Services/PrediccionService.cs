@@ -14,11 +14,13 @@ namespace TuPenca.Application.Services
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IPagoService _pagoService;
+        private readonly IEventoDeportivoService _eventoDeportivoService;
 
-        public PrediccionService(IUnitOfWork unitOfWork, IPagoService pagoService)
+        public PrediccionService(IUnitOfWork unitOfWork, IPagoService pagoService, IEventoDeportivoService eventoDeportivoService)
         {
             _unitOfWork = unitOfWork;
             _pagoService = pagoService;
+            _eventoDeportivoService = eventoDeportivoService;
         }
 
         public async Task<PrediccionResponseDto> CrearOModificarAsync(PrediccionRequestDto dto, Guid usuarioId)
@@ -121,5 +123,66 @@ namespace TuPenca.Application.Services
 
             return resultado;
         }
+
+        // NUEVA FUNCION PARA MOBILE
+        public async Task<IEnumerable<PrediccionResponseDto>> ObtenerMisPrediccionesYTodosLosPartidosAsync(Guid usuarioId,Guid pencaId)
+        {
+            // Obtener la penca
+            var penca = await _unitOfWork.Pencas.GetByIdAsync(pencaId);
+
+            if (penca == null)
+                throw new Exception("Penca no encontrada");
+
+            // Obtener la plantilla asociada
+            var plantilla = await _unitOfWork.PlantillasPenca
+                .GetByIdAsync(penca.PlantillaPencaId);
+
+            if (plantilla == null)
+                throw new Exception("Plantilla no encontrada");
+
+            // Obtener el evento con todos sus partidos
+            var evento = await _eventoDeportivoService
+                .ObtenerPorIdAsync(plantilla.EventoDeportivoId);
+
+            if (evento == null)
+                throw new Exception("Evento deportivo no encontrado");
+
+            // Obtener las predicciones del usuario para esa penca
+            var todasPredicciones = await _unitOfWork.Predicciones.GetAllAsync();
+
+            var misPredicciones = todasPredicciones
+                .Where(p =>
+                    p.UsuarioId == usuarioId &&
+                    p.PencaId == pencaId)
+                .ToList();
+
+            var resultado = new List<PrediccionResponseDto>();
+
+            foreach (var partido in evento.Partidos)
+            {
+                var prediccion = misPredicciones
+                    .FirstOrDefault(p => p.PartidoId == partido.Id);
+
+                resultado.Add(new PrediccionResponseDto
+                {
+                    Id = prediccion?.Id ?? Guid.Empty,
+
+                    PartidoId = partido.Id,
+
+                    EquipoLocal = partido.EquipoLocal,
+                    EquipoVisitante = partido.EquipoVisitante,
+
+                    GolesLocal = prediccion?.GolesLocal ?? 0,
+                    GolesVisitante = prediccion?.GolesVisitante ?? 0,
+
+                    FechaPartido = partido.Fecha
+                });
+            }
+
+            return resultado
+                .OrderBy(p => p.FechaPartido)
+                .ToList();
+        }
+
     }
 }
