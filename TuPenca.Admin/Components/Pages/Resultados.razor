@@ -275,7 +275,7 @@ else if (evento != null)
             exito = $"Resultado guardado. {resultado.UsuariosActualizados} usuario(s) actualizados.";
             partidoSeleccionado = null;
         }
-        catch (Exception ex) { formError = ex.Message; }
+        catch (Exception ex) { formError = ex.ToString(); }
         finally { saving = false; }
     }
 }
