@@ -148,6 +148,21 @@ namespace TuPenca.Application.Services
             await _unitOfWork.SaveChangesAsync();
         }
 
+        // para ver las preferencias de notificacion en web o mobile
+        public async Task<PreferenciasNotificacionResponseDto> ObtenerPreferenciasNotificacionAsync(Guid usuarioId)
+        {
+            var usuario = await _unitOfWork.Usuarios.GetByIdAsync(usuarioId);
+            if (usuario == null)
+                throw new Exception("Usuario no encontrado.");
+
+            return new PreferenciasNotificacionResponseDto
+            {
+                NotifRecordatorioPrediccion = usuario.NotifRecordatorioPrediccion,
+                NotifResultadoPartido = usuario.NotifResultadoPartido,
+                NotifResumenSemanal = usuario.NotifResumenSemanal
+            };
+        }
+
         public string HashPassword(string password) => _hasher.HashPassword(null!, password);
     }
 }

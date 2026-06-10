@@ -12,5 +12,7 @@ namespace TuPenca.Application.Interfaces.Services
         Task RegistrarFcmTokenAsync(Guid usuarioId, string fcmToken);
         Task ActualizarPreferenciasNotificacionAsync(Guid usuarioId, ActualizarPreferenciasNotificacionRequestDto dto);
 
+        Task<PreferenciasNotificacionResponseDto> ObtenerPreferenciasNotificacionAsync(Guid usuarioId);
+
     }
 }

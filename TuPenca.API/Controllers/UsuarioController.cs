@@ -154,6 +154,25 @@ namespace TuPenca.API.Controllers
             }
         }
 
+        [HttpGet("{usuarioId}/notificaciones/preferencias")]
+        [Authorize(Roles = "UsuarioComun,AdministradorSitio")]
+        public async Task<IActionResult> ObtenerPreferenciasNotificacionAsync(Guid usuarioId)
+        {
+            try
+            {
+                var response = await _usuarioService.ObtenerPreferenciasNotificacionAsync(usuarioId);
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+
+
+
+
 
         [HttpPost("prueba")]
         public async Task<IActionResult> EnviarNotificacionPruebaAsync([FromBody] NotificacionPruebaRequestDto request)
