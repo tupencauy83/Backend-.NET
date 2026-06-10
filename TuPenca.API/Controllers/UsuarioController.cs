@@ -1,9 +1,11 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
+using TuPenca.Application.DTOs.Testing;
 using TuPenca.Application.DTOs.Usuario;
 using TuPenca.Application.Interfaces.Services;
 using TuPenca.Infrastructure.Interfaces.Providers;
+using TuPenca.Infrastructure.Services;
 
 namespace TuPenca.API.Controllers
 {
@@ -13,11 +15,13 @@ namespace TuPenca.API.Controllers
     {
         private readonly IUsuarioService _usuarioService;
         private readonly ISitioProvider _sitioProvider;
+        private readonly INotificationService _notificationService;
 
-        public UsuarioController(IUsuarioService usuarioService, ISitioProvider sitioProvider)
+        public UsuarioController(IUsuarioService usuarioService, ISitioProvider sitioProvider, INotificationService notificationService)
         {
             _usuarioService = usuarioService;
             _sitioProvider = sitioProvider;
+            _notificationService = notificationService;
         }
 
         [HttpGet("obtener/todos")]
@@ -150,6 +154,21 @@ namespace TuPenca.API.Controllers
             }
         }
 
+
+        [HttpPost("prueba")]
+        [Authorize(Roles = "AdministradorSitio")]
+        public async Task<IActionResult> EnviarNotificacionPruebaAsync([FromBody] NotificacionPruebaRequestDto request)
+        {
+            try
+            {
+                await _notificationService.EnviarAsync(request.FcmToken, request.Titulo, request.Cuerpo);
+                return Ok("Notificación enviada correctamente.");
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
 
 
     }
