@@ -96,6 +96,19 @@ namespace TuPenca.API.Controllers
             }
         }
 
+        // ENDPOINT DE TESTEO ONLY PARA CAMBIAR CONTRASENAS
+        //
+
+        [HttpPost("actualizar/password/test")]
+        public async Task<IActionResult> ActualizarPasswordTestAsync([FromBody] UsuarioActualizarPasswordRequestDto request)
+        {
+           
+                var response = await _usuarioService.ActualizarPasswordAsync(request);
+                return Ok(response);
+      
+            }
+        
+
 
         // Registramos el token FCM del celular del usuario para mandarle notificaciones push
         [HttpPost("registrar/fcm-token")]
