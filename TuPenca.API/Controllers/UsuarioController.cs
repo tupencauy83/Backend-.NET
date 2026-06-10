@@ -156,7 +156,6 @@ namespace TuPenca.API.Controllers
 
 
         [HttpPost("prueba")]
-        [Authorize(Roles = "AdministradorSitio")]
         public async Task<IActionResult> EnviarNotificacionPruebaAsync([FromBody] NotificacionPruebaRequestDto request)
         {
             try
