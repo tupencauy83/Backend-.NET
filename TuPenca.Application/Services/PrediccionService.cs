@@ -91,6 +91,7 @@ namespace TuPenca.Application.Services
                 EquipoVisitante = equipoVisitante?.Nombre ?? string.Empty,
                 GolesLocal = dto.GolesLocal,
                 GolesVisitante = dto.GolesVisitante,
+                EquipoGanadorPredichoId = dto.EquipoGanadorPredichoId,
                 FechaPartido = partido.Fecha
             };
         }
@@ -117,6 +118,7 @@ namespace TuPenca.Application.Services
                     EquipoVisitante = equipoVisitante?.Nombre ?? string.Empty,
                     GolesLocal = pred.GolesLocal,
                     GolesVisitante = pred.GolesVisitante,
+                    EquipoGanadorPredichoId = pred.EquipoGanadorPredichoId,
                     FechaPartido = partido.Fecha
                 });
             }
@@ -174,6 +176,7 @@ namespace TuPenca.Application.Services
 
                     GolesLocal = prediccion?.GolesLocal ?? 0,
                     GolesVisitante = prediccion?.GolesVisitante ?? 0,
+                    EquipoGanadorPredichoId = prediccion?.EquipoGanadorPredichoId,
 
                     FechaPartido = partido.Fecha
                 });

@@ -12,6 +12,7 @@ namespace TuPenca.Application.DTOs.Prediccion
         public string EquipoVisitante { get; set; } = null!;
         public int GolesLocal { get; set; }
         public int GolesVisitante { get; set; }
+        public Guid? EquipoGanadorPredichoId { get; set; }
         public DateTime FechaPartido { get; set; }
     }
 }
