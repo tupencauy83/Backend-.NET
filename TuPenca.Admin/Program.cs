@@ -43,6 +43,7 @@ builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IFirebaseService, FirebaseService>();
 builder.Services.AddScoped<IUsuarioService, UsuarioService>();
 builder.Services.AddSingleton<IEmailService, EmailService>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddHttpClient<ISportsApiService, TheSportsDbService>();
 
 // ─── Service para actualizar automaticamente resultados de partidos ───
