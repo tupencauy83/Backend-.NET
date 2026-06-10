@@ -1,4 +1,5 @@
-﻿using System;
+﻿using FirebaseAdmin.Messaging;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using TuPenca.Application.DTOs.EventoDeportivo;
@@ -215,11 +216,18 @@ namespace TuPenca.Application.Services
                     var equipoLocalNombre = (await _unitOfWork.Equipos.GetByIdAsync(partido.EquipoLocalId))?.Nombre ?? "";
                     var equipoVisitanteNombre = (await _unitOfWork.Equipos.GetByIdAsync(partido.EquipoVisitanteId))?.Nombre ?? "";
 
-                    await _notificationService.EnviarAsync(
+                    try
+                    {
+                        await _notificationService.EnviarAsync(
                         usuario.FcmToken,
                         "Resultado cargado 🏆",
-                        $"{equipoLocalNombre} {dto.GolesLocal} - {dto.GolesVisitante} {equipoVisitanteNombre}. Obtuviste {puntos} puntos."
-                    );
+                        $"{equipoLocalNombre} {dto.GolesLocal} - {dto.GolesVisitante} {equipoVisitanteNombre}. Obtuviste {puntos} puntos.");
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine(
+                            $"Notification error: {ex}");
+                    }
                 }
             }
 

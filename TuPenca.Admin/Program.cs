@@ -1,3 +1,5 @@
+using FirebaseAdmin;
+using Google.Apis.Auth.OAuth2;
 using Microsoft.EntityFrameworkCore;
 using TuPenca.Admin.Components;
 using TuPenca.Application.Interfaces.Services;
@@ -55,6 +57,30 @@ builder.Services.AddHostedService<ResumenSemanalBackgroundService>();
 // ─── SitioProvider (null para admin plataforma) ───────────────
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ISitioProvider>(sp => new AdminSitioProvider());
+
+
+// FIREBASE
+
+var firebaseJson = builder.Configuration["Firebase:ServiceAccountJson"];
+
+GoogleCredential credential;
+
+if (!string.IsNullOrWhiteSpace(firebaseJson))
+{
+    credential = GoogleCredential.FromJson(firebaseJson);
+}
+else
+{
+    credential = GoogleCredential.FromFile("tupencauy-key.json");
+}
+
+if (FirebaseApp.DefaultInstance == null)
+{
+    FirebaseApp.Create(new AppOptions
+    {
+        Credential = credential
+    });
+}
 
 var app = builder.Build();
 
