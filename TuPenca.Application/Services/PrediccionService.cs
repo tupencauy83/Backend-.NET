@@ -40,6 +40,18 @@ namespace TuPenca.Application.Services
             if (penca == null)
                 throw new Exception("Penca no encontrada");
 
+            if (penca.Estado != EstadoPenca.EnCurso)
+            {
+                var mensaje = penca.Estado switch
+                {
+                    EstadoPenca.Abierta => "Las predicciones se habilitan cuando la penca esté en juego",
+                    EstadoPenca.Finalizada => "La penca finalizó; no se pueden modificar predicciones",
+                    EstadoPenca.Cancelada => "Esta penca fue cancelada",
+                    _ => "No se pueden cargar predicciones en el estado actual de la penca"
+                };
+                throw new Exception(mensaje);
+            }
+
             var tiempoLimite = partido.Fecha.AddMinutes(-penca.Plantilla.TiempoLimitePrevioMinutos);
             if (DateTime.UtcNow >= tiempoLimite)
                 throw new Exception("El tiempo límite para predecir este partido ya cerró");
