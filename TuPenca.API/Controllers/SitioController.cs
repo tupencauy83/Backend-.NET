@@ -85,6 +85,7 @@ namespace TuPenca.API.Controllers
                 sitio.ColorSecundario,
                 sitio.Logo,
                 sitio.ConfiguracionSitio,
+                sitio.TipoRegistro,
             };
 
             return Ok(result);
