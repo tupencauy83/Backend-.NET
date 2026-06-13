@@ -79,3 +79,131 @@ h1 { font-size: 1.5rem; font-weight: 700; margin-bottom: 1.5rem; }
 .kpi-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; text-align: center; }
 .kpi-label { display: block; font-size: .8rem; color: var(--muted); margin-bottom: .25rem; }
 .kpi-value { display: block; font-size: 2rem; font-weight: 800; }
+
+.landing-page {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: #f8fafc;
+    color: #0f172a;
+}
+
+.landing-header {
+    height: 76px;
+    padding: 0 48px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-weight: 700;
+    font-size: 1.4rem;
+}
+
+.brand-logo {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    background: #2563eb;
+    color: white;
+    display: grid;
+    place-items: center;
+}
+
+.login-button {
+    padding: 10px 18px;
+    border: 1px solid #2563eb;
+    border-radius: 8px;
+    color: #2563eb;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.landing-main {
+    flex: 1;
+    padding: 64px 48px;
+    display: grid;
+    grid-template-columns: 1.1fr 0.9fr;
+    gap: 48px;
+    align-items: center;
+}
+
+.hero-card {
+    background: white;
+    border-radius: 24px;
+    padding: 56px;
+    box-shadow: 0 20px 60px rgba(15, 23, 42, 0.08);
+}
+
+.hero-content h1 {
+    font-size: 3rem;
+    margin-bottom: 20px;
+}
+
+.hero-content p {
+    font-size: 1.15rem;
+    line-height: 1.6;
+    color: #475569;
+    margin-bottom: 32px;
+}
+
+.primary-button {
+    display: inline-block;
+    padding: 14px 24px;
+    border-radius: 10px;
+    background: #2563eb;
+    color: white;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.hero-background {
+    min-height: 320px;
+    border-radius: 24px;
+    padding: 48px;
+    background: linear-gradient(135deg, #2563eb, #1e293b);
+    color: white;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+    .hero-background h2 {
+        font-size: 2.2rem;
+        margin-bottom: 16px;
+    }
+
+    .hero-background p {
+        font-size: 1.1rem;
+        opacity: 0.9;
+    }
+
+.landing-footer {
+    padding: 22px 48px;
+    text-align: center;
+    border-top: 1px solid #e2e8f0;
+    color: #64748b;
+}
+
+@media (max-width: 900px) {
+    .landing-main {
+        grid-template-columns: 1fr;
+        padding: 32px 20px;
+    }
+
+    .landing-header {
+        padding: 0 20px;
+    }
+
+    .hero-card {
+        padding: 32px;
+    }
+
+    .hero-content h1 {
+        font-size: 2.2rem;
+    }
+}
