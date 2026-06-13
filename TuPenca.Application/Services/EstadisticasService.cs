@@ -35,7 +35,6 @@ namespace TuPenca.Application.Services
                 totalComisiones += pago.Monto * penca.Plantilla.PorcentajeComision / 100;
             }
 
-            // Top 5 sitios por usuarios
             var topPorUsuarios = usuarios
                 .GroupBy(u => u.SitioId)
                 .Select(g => new
@@ -52,7 +51,6 @@ namespace TuPenca.Application.Services
                 })
                 .ToList();
 
-            // Top 5 sitios por recaudacion
             var topPorRecaudacion = pagosAprobados
                 .Join(pencas, p => p.PencaId, penca => penca.Id, (p, penca) => new { p.Monto, penca.SitioId })
                 .GroupBy(x => x.SitioId)
@@ -83,8 +81,10 @@ namespace TuPenca.Application.Services
             };
         }
 
-        public async Task<EstadisticasSitioDto> ObtenerPorSitioAsync(Guid sitioId)
+        public async Task<EstadisticasSitioDto> ObtenerPorSitioAsync(Guid sitioId, EstadisticasSitioFiltroDto? filtro = null)
         {
+            filtro ??= new EstadisticasSitioFiltroDto();
+
             var sitio = await _unitOfWork.Sitios.GetByIdAsync(sitioId);
             if (sitio == null)
                 throw new Exception("Sitio no encontrado");
@@ -95,11 +95,35 @@ namespace TuPenca.Application.Services
             var pencas = await _unitOfWork.Pencas.GetAllConDetalleAsync();
             var pencasSitio = pencas.Where(p => p.SitioId == sitioId).ToList();
 
+            if (filtro.EstadoPenca.HasValue)
+                pencasSitio = pencasSitio.Where(p => p.Estado == filtro.EstadoPenca.Value).ToList();
+
+            if (!string.IsNullOrWhiteSpace(filtro.Buscar))
+            {
+                var termino = filtro.Buscar.Trim();
+                pencasSitio = pencasSitio
+                    .Where(p => p.Nombre.Contains(termino, StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+            }
+
+            var pencaIds = pencasSitio.Select(p => p.Id).ToHashSet();
+
             var pagos = await _unitOfWork.Pagos.GetAllAsync();
             var pagosSitio = pagos
-                .Where(p => p.Estado == EstadoPago.Aprobado &&
-                            pencasSitio.Any(penca => penca.Id == p.PencaId))
+                .Where(p => p.Estado == EstadoPago.Aprobado && pencaIds.Contains(p.PencaId))
                 .ToList();
+
+            if (filtro.FechaDesde.HasValue)
+            {
+                var desde = filtro.FechaDesde.Value.Date;
+                pagosSitio = pagosSitio.Where(p => p.Fecha.Date >= desde).ToList();
+            }
+
+            if (filtro.FechaHasta.HasValue)
+            {
+                var hasta = filtro.FechaHasta.Value.Date;
+                pagosSitio = pagosSitio.Where(p => p.Fecha.Date <= hasta).ToList();
+            }
 
             var totalRecaudadoSitio = 0;
             var totalComisionesSitio = 0;
@@ -113,11 +137,22 @@ namespace TuPenca.Application.Services
                 totalComisionesSitio += pago.Monto * penca.Plantilla.PorcentajeComision / 100;
             }
 
+            var predicciones = await _unitOfWork.Predicciones.GetAllAsync();
             var estadisticasPorPenca = new List<EstadisticaPencaDto>();
 
             foreach (var penca in pencasSitio)
             {
-                var participantes = pagosSitio.Count(p => p.PencaId == penca.Id);
+                var pagosPenca = pagosSitio.Where(p => p.PencaId == penca.Id).ToList();
+                var participantes = pagosPenca.Count;
+
+                var recaudadoPenca = 0;
+                var comisionPenca = 0;
+                foreach (var pago in pagosPenca)
+                {
+                    recaudadoPenca += pago.Monto;
+                    if (penca.Plantilla != null)
+                        comisionPenca += pago.Monto * penca.Plantilla.PorcentajeComision / 100;
+                }
 
                 var puntajes = await _unitOfWork.PuntajesUsuario.GetByPencaAsync(penca.Id);
                 var lider = puntajes
@@ -130,20 +165,25 @@ namespace TuPenca.Application.Services
                     .OrderByDescending(x => x.Puntos)
                     .FirstOrDefault();
 
-                var predicciones = await _unitOfWork.Predicciones.GetAllAsync();
-                var partidosConPrediccion = predicciones
-                    .Where(p => p.PencaId == penca.Id)
+                var predsPenca = predicciones.Where(p => p.PencaId == penca.Id).ToList();
+                var partidosConPrediccion = predsPenca
                     .Select(p => p.PartidoId)
                     .Distinct()
                     .Count();
 
                 estadisticasPorPenca.Add(new EstadisticaPencaDto
                 {
+                    PencaId = penca.Id,
                     NombrePenca = penca.Nombre,
+                    Estado = penca.Estado,
+                    MontoEntrada = penca.Plantilla?.MontoEntrada ?? 0,
                     LiderActual = lider?.Nombre ?? "Sin predicciones",
                     PuntosLider = lider?.Puntos ?? 0,
                     TotalParticipantes = participantes,
-                    TotalPartidosConPrediccion = partidosConPrediccion
+                    TotalPartidosConPrediccion = partidosConPrediccion,
+                    TotalPredicciones = predsPenca.Count,
+                    TotalRecaudado = recaudadoPenca,
+                    TotalComision = comisionPenca
                 });
             }
 
@@ -151,11 +191,16 @@ namespace TuPenca.Application.Services
             {
                 NombreSitio = sitio.Nombre,
                 TotalUsuarios = usuariosSitio.Count,
+                UsuariosPendientes = usuariosSitio.Count(u => u.Estado == EstadoUsuario.Pendiente),
                 TotalPencasActivas = pencasSitio.Count(p => p.Estado == EstadoPenca.Abierta || p.Estado == EstadoPenca.EnCurso),
                 TotalPencasFinalizadas = pencasSitio.Count(p => p.Estado == EstadoPenca.Finalizada),
+                TotalInscripciones = pagosSitio.Count,
                 TotalRecaudado = totalRecaudadoSitio,
                 TotalComisionesGeneradas = totalComisionesSitio,
                 EstadisticasPorPenca = estadisticasPorPenca
+                    .OrderByDescending(p => p.TotalRecaudado)
+                    .ThenByDescending(p => p.TotalParticipantes)
+                    .ToList()
             };
         }
     }

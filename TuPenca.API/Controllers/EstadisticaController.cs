@@ -33,7 +33,12 @@ namespace TuPenca.API.Controllers
 
         [HttpGet("sitio/{sitioId}")]
         [Authorize(Roles = "AdministradorSitio,AdministradorPlataforma")]
-        public async Task<IActionResult> ObtenerPorSitio(Guid sitioId)
+        public async Task<IActionResult> ObtenerPorSitio(
+            Guid sitioId,
+            [FromQuery] DateTime? fechaDesde,
+            [FromQuery] DateTime? fechaHasta,
+            [FromQuery] Domain.Enums.EstadoPenca? estadoPenca,
+            [FromQuery] string? buscar)
         {
             try
             {
@@ -46,7 +51,15 @@ namespace TuPenca.API.Controllers
                         return Forbid();
                 }
 
-                var response = await _estadisticasService.ObtenerPorSitioAsync(sitioId);
+                var filtro = new Application.DTOs.Estadisticas.EstadisticasSitioFiltroDto
+                {
+                    FechaDesde = fechaDesde,
+                    FechaHasta = fechaHasta,
+                    EstadoPenca = estadoPenca,
+                    Buscar = buscar
+                };
+
+                var response = await _estadisticasService.ObtenerPorSitioAsync(sitioId, filtro);
                 return Ok(response);
             }
             catch (Exception ex)
