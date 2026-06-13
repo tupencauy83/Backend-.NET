@@ -192,5 +192,23 @@ namespace TuPenca.API.Controllers
             }
         }
 
+        [HttpPatch("tipo-registro")]
+        [Authorize(Roles = "AdministradorPlataforma, AdministradorSitio")]
+        public async Task<IActionResult> CambiarTipoRegistro([FromBody] CambiarTipoRegistroDto dto)
+        {
+            try
+            {
+                var resultado = await _sitioService.CambiarTipoRegistroAsync(dto);
+                if (resultado.Id == Guid.Empty)
+                    return NotFound(new { mensaje = resultado.Mensaje });
+
+                return Ok(resultado);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { mensaje = ex.Message });
+            }
+        }
+
     }
 }

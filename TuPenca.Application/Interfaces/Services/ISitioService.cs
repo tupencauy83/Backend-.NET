@@ -23,5 +23,7 @@ namespace TuPenca.Application.Interfaces.Services
         Task<SitioResponseDto> ActualizarSitioAsync(SitioRequestDto sitioDto);
 
         Task<SitioResponseDto> EliminarSitioAsync(Guid sitioId);
+
+        Task<SitioResponseDto> CambiarTipoRegistroAsync(CambiarTipoRegistroDto dto);
     }
 }

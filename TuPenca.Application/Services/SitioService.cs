@@ -355,5 +355,25 @@ namespace TuPenca.Application.Services
                 Mensaje = "Sitio Eliminado exitosamente"
             };
         }
+
+        public async Task<SitioResponseDto> CambiarTipoRegistroAsync(CambiarTipoRegistroDto dto)
+        {
+            var sitio = await _unitOfWork.Sitios.GetByIdAsync(dto.SitioId);
+            if (sitio == null)
+                return new SitioResponseDto { Mensaje = "Sitio no encontrado" };
+
+            sitio.TipoRegistro = dto.TipoRegistro;
+
+            await _unitOfWork.Sitios.UpdateAsync(sitio);
+            await _unitOfWork.SaveChangesAsync();
+
+            return new SitioResponseDto
+            {
+                Id = sitio.Id,
+                Nombre = sitio.Nombre,
+                Mensaje = $"Tipo de registro actualizado a '{dto.TipoRegistro}' exitosamente"
+            };
+        }
+
     }
 }
