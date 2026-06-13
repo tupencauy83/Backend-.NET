@@ -209,24 +209,32 @@ namespace TuPenca.Application.Services
 
                 // NOTIFICACION DE PARTIDO FINALIZADO Y RESULTADO CARGADO
                 var usuario = await _unitOfWork.Usuarios.GetByIdAsync(prediccion.UsuarioId);
-                if (usuario != null
-                    && usuario.NotifResultadoPartido
-                    && !string.IsNullOrEmpty(usuario.FcmToken))
+                if (usuario != null && usuario.NotifResultadoPartido)
                 {
                     var equipoLocalNombre = (await _unitOfWork.Equipos.GetByIdAsync(partido.EquipoLocalId))?.Nombre ?? "";
                     var equipoVisitanteNombre = (await _unitOfWork.Equipos.GetByIdAsync(partido.EquipoVisitanteId))?.Nombre ?? "";
 
-                    try
+                    var titulo = "Resultado cargado 🏆";
+                    var cuerpo = $"{equipoLocalNombre} {dto.GolesLocal} - {dto.GolesVisitante} {equipoVisitanteNombre}. Obtuviste {puntos} puntos.";
+
+                    var tokens = new[]
                     {
-                        await _notificationService.EnviarAsync(
                         usuario.FcmToken,
-                        "Resultado cargado 🏆",
-                        $"{equipoLocalNombre} {dto.GolesLocal} - {dto.GolesVisitante} {equipoVisitanteNombre}. Obtuviste {puntos} puntos.");
+                        usuario.FcmTokenWeb
                     }
-                    catch (Exception ex)
+                    .Where(t => !string.IsNullOrEmpty(t))
+                    .ToList();
+
+                    foreach (var token in tokens)
                     {
-                        Console.WriteLine(
-                            $"Notification error: {ex}");
+                        try
+                        {
+                            await _notificationService.EnviarAsync(token!, titulo, cuerpo);
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"Error de notificacion para token: {token}: {ex}");
+                        }
                     }
                 }
             }

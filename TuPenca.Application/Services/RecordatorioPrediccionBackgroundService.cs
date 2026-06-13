@@ -63,19 +63,32 @@ namespace TuPenca.Infrastructure.Services
                                 if (yaPredicho) continue;
 
                                 var usuario = await unitOfWork.Usuarios.GetByIdAsync(usuarioId);
-                                if (usuario == null
-                                    || !usuario.NotifRecordatorioPrediccion
-                                    || string.IsNullOrEmpty(usuario.FcmToken))
+                                if (usuario == null || !usuario.NotifRecordatorioPrediccion)
                                     continue;
 
                                 var equipoLocal = await unitOfWork.Equipos.GetByIdAsync(partido.EquipoLocalId);
                                 var equipoVisitante = await unitOfWork.Equipos.GetByIdAsync(partido.EquipoVisitanteId);
 
-                                await notificationService.EnviarAsync(
-                                    usuario.FcmToken,
-                                    "⏰ ¡Faltan pocas horas para cerrar predicciones!",
-                                    $"Todavía no predijiste {equipoLocal?.Nombre} vs {equipoVisitante?.Nombre} en {penca.Nombre}. ¡No te quedes afuera!"
-                                );
+                                var titulo = "⏰ ¡Faltan pocas horas para cerrar predicciones!";
+                                var cuerpo = $"Todavía no predijiste {equipoLocal?.Nombre} vs {equipoVisitante?.Nombre} en {penca.Nombre}. ¡No te quedes afuera!";
+
+                                var tokens = new[] { usuario.FcmToken, usuario.FcmTokenWeb }
+                                    .Where(t => !string.IsNullOrEmpty(t))
+                                    .ToList();
+
+                                if (tokens.Count == 0) continue;
+
+                                foreach (var token in tokens)
+                                {
+                                    try
+                                    {
+                                        await notificationService.EnviarAsync(token!, titulo, cuerpo);
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        Console.WriteLine($"Notification error for token {token}: {ex.Message}");
+                                    }
+                                }
                             }
                         }
                     }

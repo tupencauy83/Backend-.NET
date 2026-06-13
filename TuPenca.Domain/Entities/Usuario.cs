@@ -40,6 +40,10 @@ namespace TuPenca.Domain.Entities
         // notificaciones personales
         public string? FcmToken { get; set; } = null;
 
+        // Token para notificaciones push WEB de firebase, almacenamos el token del navegador web para mandarle
+        // notificaciones personales web
+        public string? FcmTokenWeb { get; set; } = null;
+
         // Preferencias de notificaciones push
         public bool NotifRecordatorioPrediccion { get; set; } = true;
         public bool NotifResultadoPartido { get; set; } = true;

@@ -123,6 +123,7 @@ namespace TuPenca.Application.Services
             };
         }
 
+        // registrar token en el dispositivo mobile
         public async Task RegistrarFcmTokenAsync(Guid usuarioId, string fcmToken)
         {
             var usuario = await _unitOfWork.Usuarios.GetByIdAsync(usuarioId);
@@ -130,6 +131,19 @@ namespace TuPenca.Application.Services
                 throw new Exception("Usuario no encontrado.");
 
             usuario.FcmToken = fcmToken;
+            await _unitOfWork.Usuarios.UpdateAsync(usuario);
+            await _unitOfWork.SaveChangesAsync(); // or however you commit in your service layer
+        }
+
+
+        // registrar token en el navegador web
+        public async Task RegistrarFcmTokenWebAsync(Guid usuarioId, string fcmTokenWeb)
+        {
+            var usuario = await _unitOfWork.Usuarios.GetByIdAsync(usuarioId);
+            if (usuario == null)
+                throw new Exception("Usuario no encontrado.");
+
+            usuario.FcmTokenWeb = fcmTokenWeb;
             await _unitOfWork.Usuarios.UpdateAsync(usuario);
             await _unitOfWork.SaveChangesAsync(); // or however you commit in your service layer
         }

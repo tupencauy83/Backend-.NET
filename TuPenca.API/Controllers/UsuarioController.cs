@@ -134,6 +134,26 @@ namespace TuPenca.API.Controllers
             }
         }
 
+        // Registramos el token FCM del celular del usuario para mandarle notificaciones push
+        [HttpPost("registrar/fcm-tokenWeb")]
+        [Authorize(Roles = "UsuarioComun")]
+        public async Task<IActionResult> RegistrarFcmTokenWebAsync([FromBody] RegistrarFcmTokenRequestDto request)
+        {
+            try
+            {
+                var usuarioIdClaim = Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+                if (usuarioIdClaim == null)
+                    return Unauthorized();
+
+                await _usuarioService.RegistrarFcmTokenWebAsync(usuarioIdClaim, request.FcmToken);
+                return Ok();
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
 
         [HttpPost("notificaciones/preferencias")]
         [Authorize(Roles = "UsuarioComun")]

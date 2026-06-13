@@ -10,6 +10,7 @@ namespace TuPenca.Application.Interfaces.Services
         Task<UsuarioResponseDto> ActualizarUsuarioAsync(UsuarioRequestDto usuarioDto);
         Task<UsuarioResponseDto> ActualizarPasswordAsync(UsuarioActualizarPasswordRequestDto usuarioDto);
         Task RegistrarFcmTokenAsync(Guid usuarioId, string fcmToken);
+        Task RegistrarFcmTokenWebAsync(Guid usuarioId, string fcmToken);
         Task ActualizarPreferenciasNotificacionAsync(Guid usuarioId, ActualizarPreferenciasNotificacionRequestDto dto);
 
         Task<PreferenciasNotificacionResponseDto> ObtenerPreferenciasNotificacionAsync(Guid usuarioId);
