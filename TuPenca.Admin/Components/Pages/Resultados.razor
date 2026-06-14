@@ -6,6 +6,7 @@
 @using TuPenca.Domain.Interfaces
 @inject IEventoDeportivoService EventoService
 @inject IUnitOfWork UnitOfWork
+@inherits AdminProtectedPage
 @rendermode InteractiveServer
 
 <h1>Partidos y resultados</h1>
@@ -65,9 +66,13 @@
     </div>
 }
 
-@if (loading)
+@if (VerificandoSesion)
 {
-    <p>Cargando partidos...</p>
+    <p>Verificando sesión...</p>
+}
+else if (loading)
+{
+    <p>Cargando...</p>
 }
 else if (error != null)
 {
@@ -194,7 +199,12 @@ else if (evento != null)
     private TimeOnly horaPartido = TimeOnly.FromDateTime(DateTime.UtcNow.AddHours(-3));
     private PartidoRequestDto nuevoPartido = new();
 
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnSesionValidaAsync()
+    {
+        await Cargar();
+    }
+
+    private async Task Cargar()
     {
         try
         {

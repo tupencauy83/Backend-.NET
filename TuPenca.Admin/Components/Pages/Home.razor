@@ -1,11 +1,16 @@
 ﻿@page "/estadisticas"
 @using TuPenca.Application.Interfaces.Services
 @inject IEstadisticasService EstadisticasService
+@inherits AdminProtectedPage
 @rendermode InteractiveServer
 
 <h1>Estadísticas globales</h1>
 
-@if (loading)
+@if (VerificandoSesion)
+{
+    <p>Verificando sesión...</p>
+}
+else if (loading)
 {
     <p>Cargando...</p>
 }
@@ -48,7 +53,12 @@ else if (stats != null)
     private bool loading = true;
     private string? error;
 
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnSesionValidaAsync()
+    {
+        await CargarEstadisticas();
+    }
+
+    private async Task CargarEstadisticas()
     {
         try
         {

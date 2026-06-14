@@ -5,6 +5,7 @@
 @using TuPenca.Domain.Interfaces
 @inject IEventoDeportivoService EventoService
 @inject IUnitOfWork UnitOfWork
+@inherits AdminProtectedPage
 @rendermode InteractiveServer
 
 <h1>Eventos Deportivos</h1>
@@ -71,7 +72,11 @@
     </div>
 }
 
-@if (loading)
+@if (VerificandoSesion)
+{
+    <p>Verificando sesión...</p>
+}
+else if (loading)
 {
     <p>Cargando...</p>
 }
@@ -116,7 +121,12 @@ else
     private TimeOnly horaFin = TimeOnly.FromDateTime(DateTime.UtcNow.AddHours(-3));
     private EventoDeportivoRequestDto form = new();
 
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnSesionValidaAsync()
+    {
+        await Cargar();
+    }
+
+    private async Task Cargar()
     {
         var result = await EventoService.ObtenerTodosAsync();
         eventos = result.ToList();

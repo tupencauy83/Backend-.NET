@@ -3,14 +3,17 @@
 <div class="page">
     <nav class="sidebar">
         <div class="sidebar-brand">TuPenca Admin</div>
-        @* <NavLink class="nav-link" href="/" Match="NavLinkMatch.All">Estadísticas</NavLink> *@
+
         <NavLink class="nav-link" href="/estadisticas">Estadísticas</NavLink>
         <NavLink class="nav-link" href="/sitios">Sitios</NavLink>
         <NavLink class="nav-link" href="/equipos">Equipos</NavLink>
         <NavLink class="nav-link" href="/eventos">Eventos</NavLink>
         <NavLink class="nav-link" href="/plantillas">Plantillas</NavLink>
         <NavLink class="nav-link" href="/gestion-pencas">Pencas</NavLink>
+
+        <LogoutButton />
     </nav>
+
     <main class="content">
         @Body
     </main>

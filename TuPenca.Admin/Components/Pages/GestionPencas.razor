@@ -3,11 +3,16 @@
 @using TuPenca.Application.DTOs.Penca
 @using TuPenca.Domain.Enums
 @inject IPencaService PencaService
+@inherits AdminProtectedPage
 @rendermode InteractiveServer
 
 <h1>Gestión de Pencas</h1>
 
-@if (loading)
+@if (VerificandoSesion)
+{
+    <p>Verificando sesión...</p>
+}
+else if (loading)
 {
     <p>Cargando...</p>
 }
@@ -102,7 +107,12 @@ else
     private string? error;
     private string? mensaje;
 
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnSesionValidaAsync()
+    {
+        await Cargar();
+    }
+
+    private async Task Cargar()
     {
         try
         {

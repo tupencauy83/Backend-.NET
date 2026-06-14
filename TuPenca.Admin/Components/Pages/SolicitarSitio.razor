@@ -1,0 +1,166 @@
+﻿@page "/solicitar-sitio"
+@layout TuPenca.Admin.Components.Layout.PublicLayout
+@using TuPenca.Application.DTOs.Sitio
+@using TuPenca.Application.Interfaces.Services
+@using TuPenca.Domain.Enums
+@inject ISitioService SitioService
+
+@rendermode InteractiveServer
+
+<div class="public-request-page">
+    <section class="public-request-card">
+        <a href="/" class="public-back-link">← Volver</a>
+
+        <h1>Solicitar un sitio</h1>
+        <p class="public-request-subtitle">
+            Completá el formulario y el equipo de TuPenca revisará tu solicitud.
+        </p>
+
+        @if (!string.IsNullOrWhiteSpace(MensajeExito))
+        {
+            <div class="public-alert-success">
+                @MensajeExito
+            </div>
+        }
+        else
+        {
+            <EditForm Model="Formulario" OnValidSubmit="EnviarSolicitud">
+                <DataAnnotationsValidator />
+
+                <div class="public-form-row">
+                    <div class="public-form-group">
+                        <label>Tu nombre</label>
+                        <InputText class="public-form-control" @bind-Value="Formulario.NombreUsuario" />
+                    </div>
+
+                    <div class="public-form-group">
+                        <label>Email de contacto</label>
+                        <InputText class="public-form-control" type="email" @bind-Value="Formulario.Email" />
+                    </div>
+                </div>
+
+                <div class="public-form-group">
+                    <label>Nombre del sitio</label>
+                    <InputText class="public-form-control"
+                               placeholder="Ej: Penca del Club"
+                               @bind-Value="Formulario.Nombre" />
+                </div>
+
+                <div class="public-form-group">
+                    <label>Dominio del sitio</label>
+                    <InputText class="public-form-control"
+                               placeholder="Ej: pencaclub.com"
+                               @bind-Value="Formulario.UrlPropia" />
+                    <small>Sin https://. Debe coincidir con la URL donde entrarán los usuarios.</small>
+                </div>
+
+                <div class="public-form-row">
+                    <div class="public-form-group">
+                        <label>Color primario</label>
+                        <InputText class="public-color-input" type="color" @bind-Value="Formulario.ColorPrimario" />
+                    </div>
+
+                    <div class="public-form-group">
+                        <label>Color secundario</label>
+                        <InputText class="public-color-input" type="color" @bind-Value="Formulario.ColorSecundario" />
+                    </div>
+                </div>
+
+                <div class="public-form-group">
+                    <label>Tipo de registro</label>
+                    <InputSelect class="public-form-control" @bind-Value="Formulario.TipoRegistro">
+                        <option value="@TipoRegistro.Abierta">Abierta</option>
+                        <option value="@TipoRegistro.Con_Autorizacion">Con autorización</option>
+                    </InputSelect>
+                </div>
+
+                <div class="public-form-group">
+                    <label>Logo del sitio <span>(opcional)</span></label>
+                    <InputFile OnChange="CargarLogo" accept="image/*" />
+
+                    @if (LogoSeleccionado)
+                    {
+                        <small>Imagen seleccionada</small>
+                    }
+                </div>
+
+                @if (!string.IsNullOrWhiteSpace(MensajeError))
+                {
+                    <div class="public-alert-error">
+                        @MensajeError
+                    </div>
+                }
+
+                <button type="submit" class="public-button-primary public-full-button" disabled="@Enviando">
+                    @(Enviando ? "Enviando solicitud..." : "Enviar solicitud")
+                </button>
+            </EditForm>
+        }
+    </section>
+</div>
+
+@code {
+    private SitioPendienteRequestDto Formulario = new()
+    {
+        ColorPrimario = "#2563eb",
+        ColorSecundario = "#64748b",
+        TipoRegistro = TipoRegistro.Con_Autorizacion
+    };
+
+    private bool Enviando;
+    private bool LogoSeleccionado;
+    private string? MensajeExito;
+    private string? MensajeError;
+
+    private async Task EnviarSolicitud()
+    {
+        Enviando = true;
+        MensajeError = null;
+
+        try
+        {
+            Formulario.UrlPropia = NormalizarDominio(Formulario.UrlPropia);
+
+            await SitioService.SolicitarSitioAsync(Formulario);
+
+            MensajeExito = "Solicitud enviada. El equipo de TuPenca revisará tu pedido y recibirás las credenciales por email.";
+        }
+        catch (Exception ex)
+        {
+            MensajeError = $"No se pudo enviar la solicitud: {ex.Message}";
+        }
+        finally
+        {
+            Enviando = false;
+        }
+    }
+
+    private async Task CargarLogo(InputFileChangeEventArgs e)
+    {
+        var archivo = e.File;
+
+        if (archivo is null)
+            return;
+
+        using var stream = archivo.OpenReadStream(maxAllowedSize: 1024 * 1024 * 2);
+        using var ms = new MemoryStream();
+
+        await stream.CopyToAsync(ms);
+
+        Formulario.Logo = ms.ToArray();
+        LogoSeleccionado = true;
+    }
+
+    private static string NormalizarDominio(string? dominio)
+    {
+        if (string.IsNullOrWhiteSpace(dominio))
+            return string.Empty;
+
+        return dominio
+            .Trim()
+            .Replace("https://", "")
+            .Replace("http://", "")
+            .TrimEnd('/')
+            .ToLower();
+    }
+}

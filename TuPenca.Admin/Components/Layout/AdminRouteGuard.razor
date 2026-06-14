@@ -1,0 +1,41 @@
+﻿@using Microsoft.JSInterop
+@inject IJSRuntime JS
+@inject NavigationManager Navigation
+
+@rendermode InteractiveServer
+
+@if (Verificando)
+{
+    <p>Verificando sesión...</p>
+}
+else if (Autorizado)
+{
+    @ChildContent
+}
+
+@code {
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    private bool Verificando = true;
+    private bool Autorizado;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+            return;
+
+        var token = await JS.InvokeAsync<string?>("localStorage.getItem", "adminToken");
+        var rol = await JS.InvokeAsync<string?>("localStorage.getItem", "adminRol");
+
+        if (string.IsNullOrWhiteSpace(token) || rol != "AdministradorPlataforma")
+        {
+            Navigation.NavigateTo("/login-admin", forceLoad: true);
+            return;
+        }
+
+        Autorizado = true;
+        Verificando = false;
+        StateHasChanged();
+    }
+}

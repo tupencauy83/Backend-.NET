@@ -3,11 +3,16 @@
 @using TuPenca.Application.DTOs.Sitio
 @using TuPenca.Domain.Enums
 @inject ISitioService SitioService
+@inherits AdminProtectedPage
 @rendermode InteractiveServer
 
 <h1>Gestión de Sitios</h1>
 
-@if (loading)
+@if (VerificandoSesion)
+{
+    <p>Verificando sesión...</p>
+}
+else if (loading)
 {
     <p>Cargando...</p>
 }
@@ -58,7 +63,10 @@ else
     private bool loading = true;
     private string? error;
 
-    protected override async Task OnInitializedAsync() => await Cargar();
+    protected override async Task OnSesionValidaAsync()
+    {
+        await Cargar();
+    }
 
     private async Task Cargar()
     {

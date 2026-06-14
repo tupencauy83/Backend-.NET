@@ -4,6 +4,7 @@
 @using TuPenca.Application.DTOs.EventoDeportivo
 @inject IPlantillaPencaService PlantillaService
 @inject IEventoDeportivoService EventoService
+@inherits AdminProtectedPage
 @rendermode InteractiveServer
 
 <h1>Plantillas de Penca</h1>
@@ -87,7 +88,11 @@
     <p class="error">@errorGeneral</p>
 }
 
-@if (loading)
+@if (VerificandoSesion)
+{
+    <p>Verificando sesión...</p>
+}
+else if (loading)
 {
     <p>Cargando...</p>
 }
@@ -137,7 +142,12 @@ else
         Reglas = new() { new ReglaPuntuacionDto { Desviacion = 0, Puntaje = 3 } }
     };
 
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnSesionValidaAsync()
+    {
+        await Cargar();
+    }
+
+    private async Task Cargar()
     {
         var pl = await PlantillaService.ObtenerTodasAsync();
         plantillas = pl.ToList();

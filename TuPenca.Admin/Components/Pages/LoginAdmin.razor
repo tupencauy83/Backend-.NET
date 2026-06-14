@@ -1,0 +1,91 @@
+﻿@page "/login-admin"
+@layout TuPenca.Admin.Components.Layout.PublicLayout
+@using Microsoft.JSInterop
+@using TuPenca.Application.DTOs.Auth
+@using TuPenca.Application.Interfaces.Services
+@inject IAuthService AuthService
+@inject IJSRuntime JS
+@inject NavigationManager Navigation
+
+@rendermode InteractiveServer
+
+<div class="public-auth-page">
+    <div class="public-auth-card">
+        <a href="/" class="public-back-link">← Volver</a>
+
+        <h1>Login administrador</h1>
+        <p>Acceso para administradores de plataforma.</p>
+
+        <EditForm Model="Login" OnValidSubmit="Ingresar">
+            <DataAnnotationsValidator />
+
+            <div class="public-form-group">
+                <label>Email</label>
+                <InputText class="public-form-control"
+                           type="email"
+                           @bind-Value="Login.Email"
+                           placeholder="admin@tupenca.com" />
+            </div>
+
+            <div class="public-form-group">
+                <label>Contraseña</label>
+                <InputText class="public-form-control"
+                           type="password"
+                           @bind-Value="Login.Password"
+                           placeholder="••••••••" />
+            </div>
+
+            @if (!string.IsNullOrWhiteSpace(Error))
+            {
+                <div class="public-alert-error">@Error</div>
+            }
+
+            <button type="submit" class="public-button-primary public-full-button" disabled="@Cargando">
+                @(Cargando ? "Ingresando..." : "Ingresar")
+            </button>
+        </EditForm>
+    </div>
+</div>
+
+@code {
+    private LoginRequestDto Login = new();
+    private bool Cargando;
+    private string? Error;
+
+    private async Task Ingresar()
+    {
+        Cargando = true;
+        Error = null;
+
+        try
+        {
+            var response = await AuthService.LoginAsync(Login, null);
+
+            if (response is null)
+            {
+                Error = "Email o contraseña incorrectos.";
+                return;
+            }
+
+            if (response.Rol != "AdministradorPlataforma")
+            {
+                Error = "Este login es solo para administradores de plataforma.";
+                return;
+            }
+
+            await JS.InvokeVoidAsync("localStorage.setItem", "adminToken", response.Token);
+            await JS.InvokeVoidAsync("localStorage.setItem", "adminNombre", response.Nombre);
+            await JS.InvokeVoidAsync("localStorage.setItem", "adminRol", response.Rol);
+
+            Navigation.NavigateTo("/estadisticas");
+        }
+        catch (Exception ex)
+        {
+            Error = ex.Message;
+        }
+        finally
+        {
+            Cargando = false;
+        }
+    }
+}

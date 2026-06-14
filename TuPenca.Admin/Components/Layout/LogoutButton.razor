@@ -1,0 +1,20 @@
+﻿@using Microsoft.JSInterop
+@inject IJSRuntime JS
+@inject NavigationManager Navigation
+
+@rendermode InteractiveServer
+
+<button type="button" class="nav-link logout-button" @onclick="CerrarSesion">
+    Cerrar sesión
+</button>
+
+@code {
+    private async Task CerrarSesion()
+    {
+        await JS.InvokeVoidAsync("localStorage.removeItem", "adminToken");
+        await JS.InvokeVoidAsync("localStorage.removeItem", "adminNombre");
+        await JS.InvokeVoidAsync("localStorage.removeItem", "adminRol");
+
+        Navigation.NavigateTo("/login-admin", forceLoad: true);
+    }
+}

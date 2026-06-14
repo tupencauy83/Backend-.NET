@@ -2,6 +2,7 @@
 @using TuPenca.Application.Interfaces.Services
 @using TuPenca.Application.DTOs.Equipo
 @inject IEquipoService EquipoService
+@inherits AdminProtectedPage
 @rendermode InteractiveServer
 
 <h1>Gestión de Equipos</h1>
@@ -18,7 +19,11 @@
     <p class="error">@formError</p>
 }
 
-@if (loading)
+@if (VerificandoSesion)
+{
+    <p>Verificando sesión...</p>
+}
+else if (loading)
 {
     <p>Cargando...</p>
 }
@@ -53,7 +58,12 @@ else
     private string nombresTexto = "";
     private string? formError;
 
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnSesionValidaAsync()
+    {
+        await Cargar();
+    }
+
+    private async Task Cargar()
     {
         var result = await EquipoService.ObtenerTodosAsync();
         equipos = result.ToList();
