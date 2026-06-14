@@ -121,6 +121,16 @@ namespace TuPenca.Application.Services
             };
 
             await _unitOfWork.Usuarios.AddAsync(usuarioAdmin);
+
+            var parametros = new ParametrosSitio
+            {
+                Id = Guid.NewGuid(),
+                SitioId = sitio.Id
+                // el resto usa los defaults de la entidad
+            };
+            await _unitOfWork.ParametrosSitio.AddAsync(parametros);
+
+
             await _unitOfWork.SaveChangesAsync();
 
             return new SitioResponseDto()

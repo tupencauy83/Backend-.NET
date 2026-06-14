@@ -44,8 +44,13 @@ namespace TuPenca.Infrastructure.Services
                             var deadline = partido.Fecha.AddMinutes(-penca.Plantilla.TiempoLimitePrevioMinutos);
                             var ahora = DateTime.UtcNow;
 
-                            // Solo notificar si el deadline cae dentro de las proximas 2 horas
-                            if (deadline <= ahora || deadline > ahora.AddHours(2))
+                            // Solo notificar si el deadline cae dentro del parametro fijado
+                            var parametros = await unitOfWork.ParametrosSitio.GetBySitioIdAsync(penca.SitioId);
+                            if (parametros == null || !parametros.NotifRecordatorioPrediccion)
+                                continue;
+
+                            var ventana = TimeSpan.FromHours(parametros.HorasAntesRecordatorio);
+                            if (deadline <= ahora || deadline > ahora.Add(ventana))
                                 continue;
 
                             var usuarioIdsPenca = pagos

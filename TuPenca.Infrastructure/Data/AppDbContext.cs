@@ -35,6 +35,7 @@ public class AppDbContext : DbContext
     public DbSet<MensajeChat> MensajesChat => Set<MensajeChat>();
     public DbSet<Notificacion> Notificaciones => Set<Notificacion>();
     public DbSet<Invitacion> Invitaciones => Set<Invitacion>();
+    public DbSet<ParametrosSitio> ParametrosSitio => Set<ParametrosSitio>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -124,6 +125,17 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<Penca>()
             .Property(p => p.Estado)
             .HasConversion<string>();
+
+        // ─── ParametrosSitio: relación 1-1 con Sitio ──────────
+        modelBuilder.Entity<ParametrosSitio>()
+            .HasOne(p => p.Sitio)
+            .WithOne(s => s.Parametros)
+            .HasForeignKey<ParametrosSitio>(p => p.SitioId)
+            .OnDelete(DeleteBehavior.Cascade); // si se borra el sitio, se borran sus parámetros
+
+        modelBuilder.Entity<ParametrosSitio>()
+            .Property(p => p.DiaResumenSemanal)
+            .HasConversion<string>(); // guardar "Friday" en vez de 5
 
         //modelBuilder.Entity<Pago>()
         //    .Property(p => p.MetodoPago)

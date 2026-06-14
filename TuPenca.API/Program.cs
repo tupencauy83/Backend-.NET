@@ -1,11 +1,11 @@
-using Stripe;
 using FirebaseAdmin;
 using Google.Apis.Auth.OAuth2;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using TuPenca.Infrastructure.Services;
+using Stripe;
 using System.Text;
+using TuPenca.API.Hubs;
 using TuPenca.Application.Interfaces.Services;
 using TuPenca.Application.Services;
 using TuPenca.Domain.Entities;
@@ -16,7 +16,8 @@ using TuPenca.Infrastructure.Data.Repositories;
 using TuPenca.Infrastructure.Interfaces.Providers;
 using TuPenca.Infrastructure.Middleware;
 using TuPenca.Infrastructure.Providers;
-using TuPenca.API.Hubs;
+using TuPenca.Infrastructure.Repositories;
+using TuPenca.Infrastructure.Services;
 // using TuPenca.Infrastructure.Data;
 // revisar si es necesario
 
@@ -79,6 +80,7 @@ builder.Services.AddScoped<IPrediccionRepository, PrediccionRepository>();
 builder.Services.AddScoped<IPuntajeUsuarioRepository, PuntajeUsuarioRepository>();
 builder.Services.AddScoped<IPremioRepository, PremioRepository>();
 builder.Services.AddScoped<IPartidoRepository, PartidoRepository>();
+builder.Services.AddScoped<IParametrosSitioRepository, ParametrosSitioRepository>();
 
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IJwtService, JwtService>();
@@ -94,6 +96,7 @@ builder.Services.AddScoped<IEstadisticasService, EstadisticasService>();
 builder.Services.AddScoped<IInvitacionService, InvitacionService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddHttpClient<ISportsApiService, TheSportsDbService>();
+builder.Services.AddScoped<IParametrosSitioService, ParametrosSitioService>();
 
 
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();

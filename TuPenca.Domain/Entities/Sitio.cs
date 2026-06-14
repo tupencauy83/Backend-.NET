@@ -25,6 +25,10 @@ namespace TuPenca.Domain.Entities
 
         // 1 Sitio → N Invitaciones
         public ICollection<Invitacion> Invitaciones { get; set; } = new List<Invitacion>();
+
+        //Parametros de recordatorios para los sitios
+        // 1 Sitio → 1 ParametrosSitio
+        public ParametrosSitio? Parametros { get; set; }
     }
 
 }

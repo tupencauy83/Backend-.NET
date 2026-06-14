@@ -9,6 +9,7 @@ using TuPenca.Domain.Interfaces.Repositories;
 using TuPenca.Infrastructure.Data;
 using TuPenca.Infrastructure.Data.Repositories;
 using TuPenca.Infrastructure.Interfaces.Providers;
+using TuPenca.Infrastructure.Repositories;
 using TuPenca.Infrastructure.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -30,6 +31,7 @@ builder.Services.AddScoped<IPrediccionRepository, PrediccionRepository>();
 builder.Services.AddScoped<IPuntajeUsuarioRepository, PuntajeUsuarioRepository>();
 builder.Services.AddScoped<IPremioRepository, PremioRepository>();
 builder.Services.AddScoped<IPartidoRepository, PartidoRepository>();
+builder.Services.AddScoped<IParametrosSitioRepository, ParametrosSitioRepository>();
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
 // ─── Servicios de Application ─────────────────────────────────
@@ -47,6 +49,7 @@ builder.Services.AddScoped<IUsuarioService, UsuarioService>();
 builder.Services.AddSingleton<IEmailService, EmailService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddHttpClient<ISportsApiService, TheSportsDbService>();
+builder.Services.AddScoped<IParametrosSitioService, ParametrosSitioService>();
 
 // ─── Service para actualizar automaticamente resultados de partidos ───
 builder.Services.AddHostedService<ResultadoSyncBackgroundService>();

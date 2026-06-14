@@ -20,9 +20,7 @@ namespace TuPenca.Infrastructure.Services
             {
                 try
                 {
-                    // Only run on Fridays
-                    if (DateTime.UtcNow.DayOfWeek == DayOfWeek.Friday)
-                    {
+                
                         using var scope = _scopeFactory.CreateScope();
                         var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
                         var notificationService = scope.ServiceProvider.GetRequiredService<INotificationService>();
@@ -32,10 +30,18 @@ namespace TuPenca.Infrastructure.Services
 
                         foreach (var grupo in porPenca)
                         {
-                            var pencaId = grupo.Key;
-                            var penca = await unitOfWork.Pencas.GetByIdAsync(pencaId);
 
-                            var puntajes = await unitOfWork.PuntajesUsuario.GetAllAsync();
+                        var pencaId = grupo.Key;
+                        var penca = await unitOfWork.Pencas.GetByIdAsync(pencaId); // ← una sola vez acá
+
+                        var parametros = await unitOfWork.ParametrosSitio.GetBySitioIdAsync(penca.SitioId);
+                        if (parametros == null
+                            || !parametros.NotifResumenSemanal
+                            || DateTime.UtcNow.DayOfWeek != parametros.DiaResumenSemanal
+                            || DateTime.UtcNow.Hour != parametros.HoraResumenSemanal)
+                            continue;
+
+                        var puntajes = await unitOfWork.PuntajesUsuario.GetAllAsync();
                             var ranking = puntajes
                                 .Where(p => p.PencaId == pencaId)
                                 .GroupBy(p => p.UsuarioId)
@@ -75,7 +81,6 @@ namespace TuPenca.Infrastructure.Services
                             }
                         }
                     }
-                }
                 catch (Exception ex)
                 {
                     Console.WriteLine($"Error en ResumenSemanalBackgroundService: {ex.Message}");
