@@ -18,16 +18,13 @@ namespace TuPenca.Application.Services
 
         public async Task<ParametrosSitioResponseDto> ObtenerAsync(Guid sitioId)
         {
-            var parametros = await _unitOfWork.ParametrosSitio.GetBySitioIdAsync(sitioId)
-                ?? throw new Exception("Parámetros no encontrados para este sitio");
-
+            var parametros = await GetOrCreateAsync(sitioId);
             return ToDto(parametros);
         }
 
         public async Task<ParametrosSitioResponseDto> ActualizarAsync(Guid sitioId, ActualizarParametrosSitioDto dto)
         {
-            var parametros = await _unitOfWork.ParametrosSitio.GetBySitioIdAsync(sitioId)
-                ?? throw new Exception("Parámetros no encontrados para este sitio");
+            var parametros = await GetOrCreateAsync(sitioId);
 
             if (dto.NotifRecordatorioPrediccion.HasValue)
                 parametros.NotifRecordatorioPrediccion = dto.NotifRecordatorioPrediccion.Value;
@@ -59,6 +56,24 @@ namespace TuPenca.Application.Services
             await _unitOfWork.SaveChangesAsync();
 
             return ToDto(parametros);
+        }
+
+        private async Task<Domain.Entities.ParametrosSitio> GetOrCreateAsync(Guid sitioId)
+        {
+            var parametros = await _unitOfWork.ParametrosSitio.GetBySitioIdAsync(sitioId);
+            if (parametros != null)
+                return parametros;
+
+            parametros = new Domain.Entities.ParametrosSitio
+            {
+                Id = Guid.NewGuid(),
+                SitioId = sitioId,
+            };
+
+            await _unitOfWork.ParametrosSitio.AddAsync(parametros);
+            await _unitOfWork.SaveChangesAsync();
+
+            return parametros;
         }
 
         private static ParametrosSitioResponseDto ToDto(Domain.Entities.ParametrosSitio p) => new()
