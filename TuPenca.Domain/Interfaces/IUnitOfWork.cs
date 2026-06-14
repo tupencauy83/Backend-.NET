@@ -25,7 +25,7 @@ namespace TuPenca.Domain.Interfaces
         IRepository<Equipo> Equipos { get; }
         IRepository<Deporte> Deportes { get; }
         IRepository<TipoCompetencia> TiposCompetencia { get; }
-        IRepository<ParametrosSitio> ParametrosSitio { get; }
+        IParametrosSitioRepository ParametrosSitio { get; }
 
         Task<int> SaveChangesAsync(); // ← confirma todos los cambios pendientes
     }
