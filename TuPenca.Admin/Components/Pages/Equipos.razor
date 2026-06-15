@@ -1,7 +1,7 @@
 @page "/equipos"
-@using TuPenca.Application.Interfaces.Services
-@using TuPenca.Application.DTOs.Equipo
-@inject IEquipoService EquipoService
+@using TuPenca.Admin.Services
+@using TuPenca.Admin.DTOs.Equipo
+@inject EquiposApiClient EquiposApiClient
 @inherits AdminProtectedPage
 @rendermode InteractiveServer
 
@@ -65,7 +65,8 @@ else
 
     private async Task Cargar()
     {
-        var result = await EquipoService.ObtenerTodosAsync();
+        EquiposApiClient.SetToken(AdminToken!);
+        var result = await EquiposApiClient.ObtenerTodosAsync();
         equipos = result.ToList();
         loading = false;
     }
@@ -82,7 +83,7 @@ else
         saving = true; formError = null;
         try
         {
-            var nuevos = await EquipoService.CrearVariosAsync(new EquipoRequestDto { Nombres = nombres });
+            var nuevos = await EquiposApiClient.CrearVariosAsync(new EquipoRequestDto { Nombres = nombres });
             equipos.AddRange(nuevos);
             nombresTexto = "";
         }

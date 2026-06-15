@@ -1,6 +1,7 @@
 ﻿@page "/estadisticas"
-@using TuPenca.Application.Interfaces.Services
-@inject IEstadisticasService EstadisticasService
+@using TuPenca.Admin.Services
+@using TuPenca.Admin.DTOs.Estadisticas
+@inject EstadisticasApiClient EstadisticasApiClient
 @inherits AdminProtectedPage
 @rendermode InteractiveServer
 
@@ -49,7 +50,7 @@ else if (stats != null)
 }
 
 @code {
-    private TuPenca.Application.DTOs.Estadisticas.EstadisticasGlobalesDto? stats;
+    private EstadisticasGlobalesDto? stats;
     private bool loading = true;
     private string? error;
 
@@ -62,7 +63,8 @@ else if (stats != null)
     {
         try
         {
-            stats = await EstadisticasService.ObtenerGlobalesAsync();
+            EstadisticasApiClient.SetToken(AdminToken!);
+            stats = await EstadisticasApiClient.ObtenerGlobalesAsync();
         }
         catch (Exception ex)
         {

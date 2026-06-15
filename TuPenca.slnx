@@ -12,7 +12,5 @@
   <Folder Name="/tests/">
     <Project Path="TuPenca.Application.Tests/TuPenca.Application.Tests.csproj" Id="bad5d293-596c-4ada-8b37-f7174e61d49d" />
   </Folder>
-  <Project Path="TuPenca.Admin/TuPenca.Admin.csproj">
-    <Build Solution="Debug|*" Project="false" />
-  </Project>
+  <Project Path="TuPenca.Admin/TuPenca.Admin.csproj" />
 </Solution>

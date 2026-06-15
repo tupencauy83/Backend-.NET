@@ -1,189 +1,220 @@
 @page "/eventos/{EventoId:guid}/resultados"
-@using TuPenca.Application.Interfaces.Services
-@using TuPenca.Application.DTOs.EventoDeportivo
-@using TuPenca.Application.DTOs.Partido
-@using TuPenca.Domain.Entities
-@using TuPenca.Domain.Interfaces
-@inject IEventoDeportivoService EventoService
-@inject IUnitOfWork UnitOfWork
+@using TuPenca.Admin.DTOs.Evento
+@using TuPenca.Admin.DTOs.Equipo
+@using TuPenca.Admin.DTOs.Partido
+@using TuPenca.Admin.Services
+@inject EventosApiClient EventosApiClient
+@inject EquiposApiClient EquiposApiClient
 @inherits AdminProtectedPage
 @rendermode InteractiveServer
 
 <h1>Partidos y resultados</h1>
 
-<button class="btn btn-primary" style="margin-bottom:1rem;" @onclick="() => mostrarFormPartido = !mostrarFormPartido">
-    @(mostrarFormPartido ? "Cancelar" : "+ Agregar partido")
-</button>
-
-@if (mostrarFormPartido)
-{
-    <div class="form-card">
-        <div class="form-group">
-            <label>Fecha y hora</label>
-            <div style="display:flex;gap:.5rem;">
-                <input type="date" @bind="nuevoPartido.Fecha" @bind:format="yyyy-MM-dd" style="flex:1;" />
-                <input type="time" @bind="horaPartido" style="width:120px;" />
-            </div>
-        </div>
-        <div class="form-group">
-            <label>Fase</label>
-            <input @bind="nuevoPartido.Fase" placeholder="Ej: Grupo A, Semifinal..." />
-        </div>
-
-        <div class="form-group">
-            <label>Id partido API (TheSportsDB)</label>
-            <input @bind="nuevoPartido.ExternalMatchId"
-                   placeholder="Opcional - Ej: 2267073" />
-            <span style="font-size:.75rem;color:var(--muted);">
-                Permite actualizar resultados automáticamente.
-            </span>
-        </div>
-
-        <div class="form-group">
-            <label>Equipo local</label>
-            <select @bind="nuevoPartido.EquipoLocalId">
-                <option value="@Guid.Empty">Seleccionar...</option>
-                @foreach (var eq in equipos)
-                {
-                    <option value="@eq.Id">@eq.Nombre</option>
-                }
-            </select>
-        </div>
-        <div class="form-group">
-            <label>Equipo visitante</label>
-            <select @bind="nuevoPartido.EquipoVisitanteId">
-                <option value="@Guid.Empty">Seleccionar...</option>
-                @foreach (var eq in equipos)
-                {
-                    <option value="@eq.Id">@eq.Nombre</option>
-                }
-            </select>
-        </div>
-        @if (partidoError != null) { <p class="error">@partidoError</p> }
-        <button class="btn btn-primary" @onclick="AgregarPartido" disabled="@savingPartido">
-            @(savingPartido ? "Guardando..." : "Agregar partido")
-        </button>
-    </div>
-}
-
 @if (VerificandoSesion)
 {
     <p>Verificando sesión...</p>
 }
-else if (loading)
+else
 {
-    <p>Cargando...</p>
-}
-else if (error != null)
-{
-    <p class="error">@error</p>
-}
-else if (evento != null)
-{
-    <h2 style="font-size: 1.1rem; color: var(--muted); margin-bottom: 1.5rem;">@evento.Nombre</h2>
+    <button class="btn btn-primary" style="margin-bottom:1rem;" @onclick="() => mostrarFormPartido = !mostrarFormPartido">
+        @(mostrarFormPartido ? "Cancelar" : "+ Agregar partido")
+    </button>
 
-    @if (evento.Partidos == null || evento.Partidos.Count == 0)
+    @if (mostrarFormPartido)
     {
-        <p class="empty">No hay partidos cargados para este evento.</p>
-    }
-    else
-    {
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>Partido</th>
-                    <th>Fase</th>
-                    <th>Fecha</th>
-                    <th>Resultado</th>
-                    <th>Acciones</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var partido in evento.Partidos)
-                {
-                    var yaJugado = partido.ResultadoLocal != null;
-                    <tr>
-                        <td>@partido.EquipoLocal vs @partido.EquipoVisitante</td>
-                        <td>@partido.Fase</td>
-                        <td>@partido.Fecha.ToShortDateString()</td>
-                        <td>
-                            @if (yaJugado)
-                            {
-                                <strong>@partido.ResultadoLocal - @partido.ResultadoVisitante</strong>
-                            }
-                            else
-                            {
-                                <span style="color: var(--muted);">Pendiente</span>
-                            }
-                        </td>
-                        <td>
-                            @if (!yaJugado)
-                            {
-                                <button class="btn btn-primary" @onclick="() => AbrirForm(partido)">
-                                    Cargar resultado
-                                </button>
-                            }
-                            else
-                            {
-                                <button class="btn" style="background:#64748b;color:#fff;" @onclick="() => AbrirForm(partido)">
-                                    Modificar
-                                </button>
-                            }
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
-    }
-
-    @if (partidoSeleccionado != null)
-    {
-        <div class="form-card" style="margin-top: 1.5rem;">
-            <h3 style="margin-bottom: 1rem;">@partidoSeleccionado.EquipoLocal vs @partidoSeleccionado.EquipoVisitante</h3>
-            <div class="form-row">
-                <div class="form-group">
-                    <label>Goles @partidoSeleccionado.EquipoLocal</label>
-                    <input type="number" min="0" @bind="golesLocal" />
-                </div>
-                <div class="form-group">
-                    <label>Goles @partidoSeleccionado.EquipoVisitante</label>
-                    <input type="number" min="0" @bind="golesVisitante" />
-                </div>
-            </div>
+        <div class="form-card">
             <div class="form-group">
-                <label>Ganador del partido</label>
-                <select @bind="equipoGanadorId">
-                    <option value="">Empate (sin penales)</option>
-                    <option value="@partidoSeleccionado.EquipoLocalId">@partidoSeleccionado.EquipoLocal</option>
-                    <option value="@partidoSeleccionado.EquipoVisitanteId">@partidoSeleccionado.EquipoVisitante</option>
+                <label>Fecha y hora</label>
+                <div style="display:flex;gap:.5rem;">
+                    <input type="date" @bind="nuevoPartido.Fecha" @bind:format="yyyy-MM-dd" style="flex:1;" />
+                    <input type="time" @bind="horaPartido" style="width:120px;" />
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Fase</label>
+                <input @bind="nuevoPartido.Fase" placeholder="Ej: Grupo A, Semifinal..." />
+            </div>
+
+            <div class="form-group">
+                <label>Id partido API (TheSportsDB)</label>
+                <input @bind="nuevoPartido.ExternalMatchId" placeholder="Opcional - Ej: 2267073" />
+                <span style="font-size:.75rem;color:var(--muted);">
+                    Permite actualizar resultados automáticamente.
+                </span>
+            </div>
+
+            <div class="form-group">
+                <label>Equipo local</label>
+                <select @bind="nuevoPartido.EquipoLocalId">
+                    <option value="@Guid.Empty">Seleccionar...</option>
+                    @foreach (var eq in equipos)
+                    {
+                        <option value="@eq.Id">@eq.Nombre</option>
+                    }
                 </select>
-                <span style="font-size:.75rem;color:var(--muted);">Si fue empate con penales, seleccioná quién ganó</span>
             </div>
-            @if (formError != null) { <p class="error">@formError</p> }
-            @if (exito != null) { <p style="color: green; font-size: .85rem;">@exito</p> }
-            <div style="display: flex; gap: .75rem;">
-                <button class="btn btn-primary" @onclick="CargarResultado" disabled="@saving">
-                    @(saving ? "Guardando..." : "Guardar resultado")
-                </button>
-                <button class="btn" style="background: var(--border);" @onclick="() => partidoSeleccionado = null">Cancelar</button>
+
+            <div class="form-group">
+                <label>Equipo visitante</label>
+                <select @bind="nuevoPartido.EquipoVisitanteId">
+                    <option value="@Guid.Empty">Seleccionar...</option>
+                    @foreach (var eq in equipos)
+                    {
+                        <option value="@eq.Id">@eq.Nombre</option>
+                    }
+                </select>
             </div>
+
+            @if (partidoError != null)
+            {
+                <p class="error">@partidoError</p>
+            }
+
+            <button class="btn btn-primary" @onclick="AgregarPartido" disabled="@savingPartido">
+                @(savingPartido ? "Guardando..." : "Agregar partido")
+            </button>
         </div>
     }
-}
 
-<div style="margin-top: 2rem;">
-    <a href="/eventos" style="color: var(--primary);">← Volver a eventos</a>
-</div>
+    @if (loading)
+    {
+        <p>Cargando...</p>
+    }
+    else if (error != null)
+    {
+        <p class="error">@error</p>
+    }
+    else if (evento != null)
+    {
+        <h2 style="font-size: 1.1rem; color: var(--muted); margin-bottom: 1.5rem;">
+            @evento.Nombre
+        </h2>
+
+        @if (evento.Partidos == null || evento.Partidos.Count == 0)
+        {
+            <p class="empty">No hay partidos cargados para este evento.</p>
+        }
+        else
+        {
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Partido</th>
+                        <th>Fase</th>
+                        <th>Fecha</th>
+                        <th>Resultado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    @foreach (var partido in evento.Partidos)
+                    {
+                        var yaJugado = partido.ResultadoLocal != null;
+
+                        <tr>
+                            <td>@partido.EquipoLocal vs @partido.EquipoVisitante</td>
+                            <td>@partido.Fase</td>
+                            <td>@partido.Fecha.ToShortDateString()</td>
+                            <td>
+                                @if (yaJugado)
+                                {
+                                    <strong>@partido.ResultadoLocal - @partido.ResultadoVisitante</strong>
+                                }
+                                else
+                                {
+                                    <span style="color: var(--muted);">Pendiente</span>
+                                }
+                            </td>
+                            <td>
+                                @if (!yaJugado)
+                                {
+                                    <button class="btn btn-primary" @onclick="() => AbrirForm(partido)">
+                                        Cargar resultado
+                                    </button>
+                                }
+                                else
+                                {
+                                    <button class="btn" style="background:#64748b;color:#fff;" @onclick="() => AbrirForm(partido)">
+                                        Modificar
+                                    </button>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+
+        @if (partidoSeleccionado != null)
+        {
+            <div class="form-card" style="margin-top: 1.5rem;">
+                <h3 style="margin-bottom: 1rem;">
+                    @partidoSeleccionado.EquipoLocal vs @partidoSeleccionado.EquipoVisitante
+                </h3>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Goles @partidoSeleccionado.EquipoLocal</label>
+                        <input type="number" min="0" @bind="golesLocal" />
+                    </div>
+
+                    <div class="form-group">
+                        <label>Goles @partidoSeleccionado.EquipoVisitante</label>
+                        <input type="number" min="0" @bind="golesVisitante" />
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Ganador del partido</label>
+                    <select @bind="equipoGanadorId">
+                        <option value="">Empate sin penales</option>
+                        <option value="@partidoSeleccionado.EquipoLocalId">@partidoSeleccionado.EquipoLocal</option>
+                        <option value="@partidoSeleccionado.EquipoVisitanteId">@partidoSeleccionado.EquipoVisitante</option>
+                    </select>
+                    <span style="font-size:.75rem;color:var(--muted);">
+                        Si fue empate con penales, seleccioná quién ganó.
+                    </span>
+                </div>
+
+                @if (formError != null)
+                {
+                    <p class="error">@formError</p>
+                }
+
+                @if (exito != null)
+                {
+                    <p style="color: green; font-size: .85rem;">@exito</p>
+                }
+
+                <div style="display: flex; gap: .75rem;">
+                    <button class="btn btn-primary" @onclick="CargarResultado" disabled="@saving">
+                        @(saving ? "Guardando..." : "Guardar resultado")
+                    </button>
+
+                    <button class="btn" style="background: var(--border);" @onclick="() => partidoSeleccionado = null">
+                        Cancelar
+                    </button>
+                </div>
+            </div>
+        }
+    }
+
+    <div style="margin-top: 2rem;">
+        <a href="/eventos" style="color: var(--primary);">← Volver a eventos</a>
+    </div>
+}
 
 @code {
     [Parameter] public Guid EventoId { get; set; }
 
-    private EventoDeportivoResponseDto? evento;
-    private List<Equipo> equipos = new();
+    private EventoResponseDto? evento;
+    private List<EquipoResponseDto> equipos = new();
+
     private bool loading = true;
     private string? error;
 
-    // Form resultado
     private PartidoResponseDto? partidoSeleccionado;
     private int golesLocal = 0;
     private int golesVisitante = 0;
@@ -192,7 +223,6 @@ else if (evento != null)
     private string? formError;
     private string? exito;
 
-    // Form nuevo partido
     private bool mostrarFormPartido = false;
     private bool savingPartido = false;
     private string? partidoError;
@@ -208,31 +238,79 @@ else if (evento != null)
     {
         try
         {
-            evento = await EventoService.ObtenerPorIdAsync(EventoId);
-            if (evento == null) error = "Evento no encontrado";
-            equipos = (await UnitOfWork.Equipos.GetAllAsync()).ToList();
+            EventosApiClient.SetToken(AdminToken!);
+
+            evento = await EventosApiClient.ObtenerDetalleAsync(EventoId);
+
+            if (evento == null)
+            {
+                error = "Evento no encontrado.";
+                return;
+            }
+
+            equipos = await EquiposApiClient.ObtenerTodosAsync();
+
             nuevoPartido.EventoDeportivoId = EventoId;
         }
-        catch (Exception ex) { error = ex.Message; }
-        finally { loading = false; }
+        catch (Exception ex)
+        {
+            error = ex.Message;
+        }
+        finally
+        {
+            loading = false;
+        }
     }
 
     private async Task AgregarPartido()
     {
-        savingPartido = true; partidoError = null;
+        savingPartido = true;
+        partidoError = null;
+
         try
         {
-            // Combinar fecha + hora
+            if (nuevoPartido.EquipoLocalId == Guid.Empty)
+            {
+                partidoError = "Seleccioná el equipo local.";
+                return;
+            }
+
+            if (nuevoPartido.EquipoVisitanteId == Guid.Empty)
+            {
+                partidoError = "Seleccioná el equipo visitante.";
+                return;
+            }
+
+            if (nuevoPartido.EquipoLocalId == nuevoPartido.EquipoVisitanteId)
+            {
+                partidoError = "El equipo local y visitante no pueden ser el mismo.";
+                return;
+            }
+
+            nuevoPartido.EventoDeportivoId = EventoId;
             nuevoPartido.Fecha = nuevoPartido.Fecha.Date.Add(horaPartido.ToTimeSpan());
-            var nuevo = await EventoService.AgregarPartidoAsync(nuevoPartido);
+
+            var nuevo = await EventosApiClient.AgregarPartidoAsync(nuevoPartido);
+
             evento!.Partidos ??= new();
             evento.Partidos.Add(nuevo);
-            nuevoPartido = new() { EventoDeportivoId = EventoId };
+
+            nuevoPartido = new PartidoRequestDto
+            {
+                EventoDeportivoId = EventoId
+            };
+
             horaPartido = TimeOnly.FromDateTime(DateTime.UtcNow.AddHours(-3));
             mostrarFormPartido = false;
         }
-        catch (Exception ex) { partidoError = ex.Message; }
-        finally { savingPartido = false; }
+        catch (Exception ex)
+        {
+            partidoError = ex.Message;
+        }
+        finally
+        {
+            savingPartido = false;
+        }
     }
 
     private void AbrirForm(PartidoResponseDto partido)
@@ -247,13 +325,18 @@ else if (evento != null)
 
     private async Task CargarResultado()
     {
-        if (partidoSeleccionado == null) return;
-        saving = true; formError = null; exito = null;
+        if (partidoSeleccionado == null)
+            return;
+
+        saving = true;
+        formError = null;
+        exito = null;
+
         try
         {
-            // Deducir ganador si no es empate
             Guid? ganadorFinal = null;
-            if (!string.IsNullOrEmpty(equipoGanadorId))
+
+            if (!string.IsNullOrWhiteSpace(equipoGanadorId))
             {
                 ganadorFinal = Guid.Parse(equipoGanadorId);
             }
@@ -266,7 +349,7 @@ else if (evento != null)
                 ganadorFinal = partidoSeleccionado.EquipoVisitanteId;
             }
 
-            var resultado = await EventoService.CargarResultadoAsync(new ResultadoRequestDto
+            var resultado = await EventosApiClient.CargarResultadoAsync(new ResultadoRequestDto
             {
                 PartidoId = partidoSeleccionado.Id,
                 GolesLocal = golesLocal,
@@ -274,8 +357,8 @@ else if (evento != null)
                 EquipoGanadorId = ganadorFinal
             });
 
-            // Actualizar la UI
             var idx = evento!.Partidos!.FindIndex(p => p.Id == partidoSeleccionado.Id);
+
             if (idx >= 0)
             {
                 evento.Partidos[idx].ResultadoLocal = golesLocal;
@@ -285,7 +368,13 @@ else if (evento != null)
             exito = $"Resultado guardado. {resultado.UsuariosActualizados} usuario(s) actualizados.";
             partidoSeleccionado = null;
         }
-        catch (Exception ex) { formError = ex.ToString(); }
-        finally { saving = false; }
+        catch (Exception ex)
+        {
+            formError = ex.Message;
+        }
+        finally
+        {
+            saving = false;
+        }
     }
 }

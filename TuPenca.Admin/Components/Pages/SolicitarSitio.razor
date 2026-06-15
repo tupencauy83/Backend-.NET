@@ -1,9 +1,9 @@
 ﻿@page "/solicitar-sitio"
 @layout TuPenca.Admin.Components.Layout.PublicLayout
-@using TuPenca.Application.DTOs.Sitio
-@using TuPenca.Application.Interfaces.Services
-@using TuPenca.Domain.Enums
-@inject ISitioService SitioService
+@using TuPenca.Admin.DTOs.Sitio
+@using TuPenca.Admin.Models.Enums
+@using TuPenca.Admin.Services
+@inject SitiosApiClient SitiosApiClient
 
 @rendermode InteractiveServer
 
@@ -121,7 +121,7 @@
         {
             Formulario.UrlPropia = NormalizarDominio(Formulario.UrlPropia);
 
-            await SitioService.SolicitarSitioAsync(Formulario);
+            await SitiosApiClient.SolicitarAsync(Formulario);
 
             MensajeExito = "Solicitud enviada. El equipo de TuPenca revisará tu pedido y recibirás las credenciales por email.";
         }

@@ -1,8 +1,8 @@
 @page "/gestion-pencas"
-@using TuPenca.Application.Interfaces.Services
-@using TuPenca.Application.DTOs.Penca
-@using TuPenca.Domain.Enums
-@inject IPencaService PencaService
+@using TuPenca.Admin.Services
+@using TuPenca.Admin.DTOs.Penca
+@using TuPenca.Admin.Models.Enums
+@inject PencasApiClient PencasApiClient
 @inherits AdminProtectedPage
 @rendermode InteractiveServer
 
@@ -32,6 +32,7 @@ else
                 <th>Acciones</th>
             </tr>
         </thead>
+
         <tbody>
             @foreach (var penca in pencas)
             {
@@ -40,24 +41,30 @@ else
                     <td>@penca.PlantillaNombre</td>
                     <td>@penca.EventoDeportivo</td>
                     <td>
-                        <span class="badge-@penca.Estado.ToString().ToLower()">@penca.Estado</span>
+                        <span class="badge-@penca.Estado.ToString().ToLower()">
+                            @penca.Estado
+                        </span>
                     </td>
                     <td>
                         @if (penca.Estado == EstadoPenca.Abierta)
                         {
-                            <button class="btn btn-primary" @onclick="() => CambiarEstado(penca.Id, EstadoPenca.EnCurso)">
+                            <button class="btn btn-primary"
+                                    @onclick="() => CambiarEstado(penca.Id, EstadoPenca.EnCurso)">
                                 Iniciar
                             </button>
                         }
                         else if (penca.Estado == EstadoPenca.EnCurso)
                         {
-                            <button class="btn btn-danger" @onclick="() => CambiarEstado(penca.Id, EstadoPenca.Finalizada)">
+                            <button class="btn btn-danger"
+                                    @onclick="() => CambiarEstado(penca.Id, EstadoPenca.Finalizada)">
                                 Finalizar
                             </button>
                         }
                         else if (penca.Estado == EstadoPenca.Finalizada)
                         {
-                            <button class="btn" style="background:#64748b;color:#fff;" @onclick="() => VerGanadores(penca.Id)">
+                            <button class="btn"
+                                    style="background:#64748b;color:#fff;"
+                                    @onclick="() => VerGanadores(penca.Id)">
                                 Ver ganadores
                             </button>
                         }
@@ -77,10 +84,16 @@ else
 {
     <div class="form-card" style="margin-top: 1.5rem;">
         <h3 style="margin-bottom: 1rem;">Ganadores</h3>
+
         <table class="table">
             <thead>
-                <tr><th>Posición</th><th>Usuario</th><th>Premio</th></tr>
+                <tr>
+                    <th>Posición</th>
+                    <th>Usuario</th>
+                    <th>Premio</th>
+                </tr>
             </thead>
+
             <tbody>
                 @foreach (var g in ganadores)
                 {
@@ -103,6 +116,7 @@ else
 @code {
     private List<PencaResponseDto> pencas = new();
     private List<PremioResponseDto>? ganadores;
+
     private bool loading = true;
     private string? error;
     private string? mensaje;
@@ -116,35 +130,58 @@ else
     {
         try
         {
-            var result = await PencaService.ObtenerTodasAsync();
-            pencas = result.ToList();
+            PencasApiClient.SetToken(AdminToken!);
+
+            pencas = await PencasApiClient.ObtenerTodasAsync();
         }
-        catch (Exception ex) { error = ex.Message; }
-        finally { loading = false; }
+        catch (Exception ex)
+        {
+            error = ex.Message;
+        }
+        finally
+        {
+            loading = false;
+        }
     }
 
     private async Task CambiarEstado(Guid pencaId, EstadoPenca nuevoEstado)
     {
         try
         {
-            mensaje = null; ganadores = null;
-            var actualizada = await PencaService.CambiarEstadoAsync(pencaId, nuevoEstado);
+            PencasApiClient.SetToken(AdminToken!);
+
+            mensaje = null;
+            ganadores = null;
+            error = null;
+
+            var actualizada = await PencasApiClient.CambiarEstadoAsync(pencaId, nuevoEstado);
+
             var idx = pencas.FindIndex(p => p.Id == pencaId);
-            if (idx >= 0) pencas[idx] = actualizada;
+
+            if (idx >= 0)
+                pencas[idx] = actualizada;
 
             if (nuevoEstado == EstadoPenca.Finalizada)
                 mensaje = "Penca finalizada. Se calcularon los ganadores y premios.";
         }
-        catch (Exception ex) { error = ex.Message; }
+        catch (Exception ex)
+        {
+            error = ex.Message;
+        }
     }
 
     private async Task VerGanadores(Guid pencaId)
     {
         try
         {
-            var result = await PencaService.ObtenerGanadoresAsync(pencaId);
-            ganadores = result.ToList();
+            PencasApiClient.SetToken(AdminToken!);
+
+            error = null;
+            ganadores = await PencasApiClient.ObtenerGanadoresAsync(pencaId);
         }
-        catch (Exception ex) { error = ex.Message; }
+        catch (Exception ex)
+        {
+            error = ex.Message;
+        }
     }
 }

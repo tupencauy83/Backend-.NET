@@ -1,9 +1,9 @@
 ﻿@page "/login-admin"
 @layout TuPenca.Admin.Components.Layout.PublicLayout
 @using Microsoft.JSInterop
-@using TuPenca.Application.DTOs.Auth
-@using TuPenca.Application.Interfaces.Services
-@inject IAuthService AuthService
+@using TuPenca.Admin.DTOs.Auth
+@using TuPenca.Admin.Services
+@inject AuthApiClient AuthApiClient
 @inject IJSRuntime JS
 @inject NavigationManager Navigation
 
@@ -59,7 +59,7 @@
 
         try
         {
-            var response = await AuthService.LoginAsync(Login, null);
+            var response = await AuthApiClient.LoginAdminAsync(Login);
 
             if (response is null)
             {

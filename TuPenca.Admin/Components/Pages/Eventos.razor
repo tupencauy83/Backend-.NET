@@ -1,10 +1,7 @@
 @page "/eventos"
-@using TuPenca.Application.Interfaces.Services
-@using TuPenca.Application.DTOs.EventoDeportivo
-@using TuPenca.Domain.Entities
-@using TuPenca.Domain.Interfaces
-@inject IEventoDeportivoService EventoService
-@inject IUnitOfWork UnitOfWork
+@using TuPenca.Admin.Services
+@using TuPenca.Admin.DTOs.Evento
+@inject EventosApiClient EventosApiClient
 @inherits AdminProtectedPage
 @rendermode InteractiveServer
 
@@ -21,6 +18,7 @@
             <label>Nombre</label>
             <input @bind="form.Nombre" />
         </div>
+
         <div class="form-row">
             <div class="form-group">
                 <label>Fecha inicio</label>
@@ -29,6 +27,7 @@
                     <input type="time" @bind="horaInicio" style="width:120px;" />
                 </div>
             </div>
+
             <div class="form-group">
                 <label>Fecha fin</label>
                 <div style="display:flex;gap:.5rem;">
@@ -37,6 +36,7 @@
                 </div>
             </div>
         </div>
+
         <div class="form-group">
             <label>Deporte</label>
             <select @bind="form.DeporteId">
@@ -46,11 +46,13 @@
                     <option value="@d.Id">@d.Nombre</option>
                 }
             </select>
+
             <div style="display:flex;gap:.5rem;margin-top:.35rem;">
                 <input @bind="nuevoDeporte" placeholder="Nuevo deporte..." style="flex:1;" />
                 <button type="button" class="btn" style="background:var(--border);" @onclick="CrearDeporte">+ Crear</button>
             </div>
         </div>
+
         <div class="form-group">
             <label>Tipo de competencia</label>
             <select @bind="form.TipoCompetenciaId">
@@ -60,12 +62,18 @@
                     <option value="@t.Id">@t.Nombre</option>
                 }
             </select>
+
             <div style="display:flex;gap:.5rem;margin-top:.35rem;">
                 <input @bind="nuevoTipo" placeholder="Nuevo tipo..." style="flex:1;" />
                 <button type="button" class="btn" style="background:var(--border);" @onclick="CrearTipo">+ Crear</button>
             </div>
         </div>
-        @if (formError != null) { <p class="error">@formError</p> }
+
+        @if (formError != null)
+        {
+            <p class="error">@formError</p>
+        }
+
         <button class="btn btn-primary" @onclick="Crear" disabled="@saving">
             @(saving ? "Creando..." : "Crear evento")
         </button>
@@ -84,7 +92,12 @@ else
 {
     <table class="table">
         <thead>
-            <tr><th>Nombre</th><th>Inicio</th><th>Fin</th><th>Acciones</th></tr>
+            <tr>
+                <th>Nombre</th>
+                <th>Inicio</th>
+                <th>Fin</th>
+                <th>Acciones</th>
+            </tr>
         </thead>
         <tbody>
             @foreach (var ev in eventos)
@@ -107,19 +120,24 @@ else
     }
 }
 
+
 @code {
-    private List<EventoDeportivoResponseDto> eventos = new();
-    private List<Deporte> deportes = new();
-    private List<TipoCompetencia> tiposComp = new();
+    private List<EventoResponseDto> eventos = new();
+    private List<CatalogoSimpleDto> deportes = new();
+    private List<CatalogoSimpleDto> tiposComp = new();
+
     private bool loading = true;
     private bool saving = false;
     private bool mostrarForm = false;
+
     private string? formError;
     private string nuevoDeporte = "";
     private string nuevoTipo = "";
+
     private TimeOnly horaInicio = TimeOnly.FromDateTime(DateTime.UtcNow.AddHours(-3));
     private TimeOnly horaFin = TimeOnly.FromDateTime(DateTime.UtcNow.AddHours(-3));
-    private EventoDeportivoRequestDto form = new();
+
+    private EventoRequestDto form = new();
 
     protected override async Task OnSesionValidaAsync()
     {
@@ -128,38 +146,51 @@ else
 
     private async Task Cargar()
     {
-        var result = await EventoService.ObtenerTodosAsync();
-        eventos = result.ToList();
-        deportes = (await UnitOfWork.Deportes.GetAllAsync()).ToList();
-        tiposComp = (await UnitOfWork.TiposCompetencia.GetAllAsync()).ToList();
+        EventosApiClient.SetToken(AdminToken!);
+
+        eventos = await EventosApiClient.ObtenerTodosAsync();
+        deportes = await EventosApiClient.ObtenerDeportesAsync();
+        tiposComp = await EventosApiClient.ObtenerTiposCompetenciaAsync();
+
         loading = false;
     }
 
     private async Task Crear()
     {
-        saving = true; formError = null;
+        saving = true;
+        formError = null;
+
         try
         {
-            // Combinar fecha + hora
             form.FechaInicio = form.FechaInicio.Date.Add(horaInicio.ToTimeSpan());
             form.FechaFin = form.FechaFin.Date.Add(horaFin.ToTimeSpan());
-            var nuevo = await EventoService.CrearAsync(form);
+
+            var nuevo = await EventosApiClient.CrearAsync(form);
+
             eventos.Add(nuevo);
+
             form = new();
             horaInicio = TimeOnly.FromDateTime(DateTime.UtcNow.AddHours(-3));
             horaFin = TimeOnly.FromDateTime(DateTime.UtcNow.AddHours(-3));
             mostrarForm = false;
         }
-        catch (Exception ex) { formError = ex.Message; }
-        finally { saving = false; }
+        catch (Exception ex)
+        {
+            formError = ex.Message;
+        }
+        finally
+        {
+            saving = false;
+        }
     }
 
     private async Task CrearDeporte()
     {
-        if (string.IsNullOrWhiteSpace(nuevoDeporte)) return;
-        var deporte = new Deporte { Id = Guid.NewGuid(), Nombre = nuevoDeporte.Trim() };
-        await UnitOfWork.Deportes.AddAsync(deporte);
-        await UnitOfWork.SaveChangesAsync();
+        if (string.IsNullOrWhiteSpace(nuevoDeporte))
+            return;
+
+        var deporte = await EventosApiClient.CrearDeporteAsync(nuevoDeporte.Trim());
+
         deportes.Add(deporte);
         form.DeporteId = deporte.Id;
         nuevoDeporte = "";
@@ -167,10 +198,11 @@ else
 
     private async Task CrearTipo()
     {
-        if (string.IsNullOrWhiteSpace(nuevoTipo)) return;
-        var tipo = new TipoCompetencia { Id = Guid.NewGuid(), Nombre = nuevoTipo.Trim() };
-        await UnitOfWork.TiposCompetencia.AddAsync(tipo);
-        await UnitOfWork.SaveChangesAsync();
+        if (string.IsNullOrWhiteSpace(nuevoTipo))
+            return;
+
+        var tipo = await EventosApiClient.CrearTipoCompetenciaAsync(nuevoTipo.Trim());
+
         tiposComp.Add(tipo);
         form.TipoCompetenciaId = tipo.Id;
         nuevoTipo = "";

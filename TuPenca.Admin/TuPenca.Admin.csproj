@@ -4,12 +4,6 @@
     <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
   </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\TuPenca.Application\TuPenca.Application.csproj" />
-    <ProjectReference Include="..\TuPenca.Infrastructure\TuPenca.Infrastructure.csproj" />
-    <ProjectReference Include="..\TuPenca.Domain\TuPenca.Domain.csproj" />
-  </ItemGroup>
-
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>

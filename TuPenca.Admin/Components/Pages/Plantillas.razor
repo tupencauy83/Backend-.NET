@@ -1,146 +1,172 @@
 @page "/plantillas"
-@using TuPenca.Application.Interfaces.Services
-@using TuPenca.Application.DTOs.PlantillaPenca
-@using TuPenca.Application.DTOs.EventoDeportivo
-@inject IPlantillaPencaService PlantillaService
-@inject IEventoDeportivoService EventoService
+@using TuPenca.Admin.Services
+@using TuPenca.Admin.DTOs.Plantillas
+@using TuPenca.Admin.DTOs.Evento
+@inject PlantillasApiClient PlantillasApiClient
 @inherits AdminProtectedPage
 @rendermode InteractiveServer
 
 <h1>Plantillas de Penca</h1>
 
-<button class="btn btn-primary" @onclick="() => mostrarForm = !mostrarForm">
-    @(mostrarForm ? "Cancelar" : "+ Nueva plantilla")
-</button>
-
-@if (mostrarForm)
-{
-    <div class="form-card">
-        <div class="form-group">
-            <label>Nombre</label>
-            <input @bind="form.Nombre" required />
-        </div>
-        <div class="form-group">
-            <label>Descripción</label>
-            <textarea @bind="form.Descripcion" rows="2" required></textarea>
-        </div>
-        <div class="form-row">
-            <div class="form-group">
-                <label>Tiempo límite (minutos)</label>
-                <input type="number" min="1" @bind="form.TiempoLimitePrevioMinutos" />
-            </div>
-            <div class="form-group">
-                <label>Evento deportivo</label>
-                <select @bind="form.EventoDeportivoId">
-                    <option value="@Guid.Empty">Seleccionar...</option>
-                    @foreach (var ev in eventos)
-                    {
-                        <option value="@ev.Id">@ev.Nombre</option>
-                    }
-                </select>
-            </div>
-        </div>
-        <div class="form-row">
-            <div class="form-group">
-                <label>Monto de entrada ($)</label>
-                <input type="number" min="0" @bind="form.MontoEntrada" />
-            </div>
-            <div class="form-group">
-                <label>Comisión plataforma (%)</label>
-                <input type="number" min="0" max="49" @bind="form.PorcentajeComision" />
-            </div>
-        </div>
-        <div class="form-group">
-            <label>Puntos extra por acertar ganador</label>
-            <input type="number" min="0" @bind="form.PuntajeGanador" />
-            <span style="font-size:.75rem;color:var(--muted);">Puntos adicionales si el usuario acierta quién gana el partido</span>
-        </div>
-
-        <label style="font-weight:600;margin-bottom:.5rem;display:block;">Reglas de puntuación</label>
-        @for (int i = 0; i < form.Reglas.Count; i++)
-        {
-            var idx = i;
-            <div style="display:flex;gap:.5rem;margin-bottom:.5rem;align-items:end;">
-                <div class="form-group" style="margin-bottom:0;flex:1;">
-                    <label style="font-size:.75rem;">Desviación</label>
-                    <input type="number" min="0" @bind="form.Reglas[idx].Desviacion" />
-                </div>
-                <div class="form-group" style="margin-bottom:0;flex:1;">
-                    <label style="font-size:.75rem;">Puntaje</label>
-                    <input type="number" min="0" @bind="form.Reglas[idx].Puntaje" />
-                </div>
-                <button type="button" class="btn btn-danger" @onclick="() => form.Reglas.RemoveAt(idx)">✕</button>
-            </div>
-        }
-        <button type="button" class="btn" style="background:var(--border);margin-bottom:1rem;" @onclick="() => form.Reglas.Add(new ReglaPuntuacionDto())">
-            + Agregar regla
-        </button>
-
-        @if (formError != null) { <p class="error">@formError</p> }
-        <button class="btn btn-primary" @onclick="Crear" disabled="@saving">
-            @(saving ? "Creando..." : "Crear plantilla")
-        </button>
-    </div>
-}
-
-@if (errorGeneral != null)
-{
-    <p class="error">@errorGeneral</p>
-}
-
 @if (VerificandoSesion)
 {
     <p>Verificando sesión...</p>
 }
-else if (loading)
-{
-    <p>Cargando...</p>
-}
 else
 {
-    <table class="table">
-        <thead>
-            <tr><th>Nombre</th><th>Evento</th><th>Límite (min)</th><th>Monto</th><th>Reglas</th><th>Acciones</th></tr>
-        </thead>
-        <tbody>
-            @foreach (var pl in plantillas)
-            {
-                <tr>
-                    <td>@pl.Nombre</td>
-                    <td>@pl.EventoDeportivo</td>
-                    <td>@pl.TiempoLimitePrevioMinutos</td>
-                    <td>$@pl.MontoEntrada</td>
-                    <td>@(pl.Reglas?.Count ?? 0)</td>
-                    <td>
-                        <button class="btn btn-danger" @onclick="() => Eliminar(pl.Id)">Eliminar</button>
-                    </td>
-                </tr>
-            }
-        </tbody>
-    </table>
+    <button class="btn btn-primary" @onclick="() => mostrarForm = !mostrarForm">
+        @(mostrarForm ? "Cancelar" : "+ Nueva plantilla")
+    </button>
 
-    @if (plantillas.Count == 0)
+    @if (mostrarForm)
     {
-        <p class="empty">No hay plantillas registradas.</p>
+        <div class="form-card">
+            <div class="form-group">
+                <label>Nombre</label>
+                <input @bind="form.Nombre" required />
+            </div>
+
+            <div class="form-group">
+                <label>Descripción</label>
+                <textarea @bind="form.Descripcion" rows="2" required></textarea>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Tiempo límite (minutos)</label>
+                    <input type="number" min="1" @bind="form.TiempoLimitePrevioMinutos" />
+                </div>
+
+                <div class="form-group">
+                    <label>Evento deportivo</label>
+                    <select @bind="form.EventoDeportivoId">
+                        <option value="@Guid.Empty">Seleccionar...</option>
+                        @foreach (var ev in eventos)
+                        {
+                            <option value="@ev.Id">@ev.Nombre</option>
+                        }
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Monto de entrada ($)</label>
+                    <input type="number" min="0" @bind="form.MontoEntrada" />
+                </div>
+
+                <div class="form-group">
+                    <label>Comisión plataforma (%)</label>
+                    <input type="number" min="0" max="49" @bind="form.PorcentajeComision" />
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Puntos extra por acertar ganador</label>
+                <input type="number" min="0" @bind="form.PuntajeGanador" />
+                <span style="font-size:.75rem;color:var(--muted);">
+                    Puntos adicionales si el usuario acierta quién gana el partido
+                </span>
+            </div>
+
+            <label style="font-weight:600;margin-bottom:.5rem;display:block;">Reglas de puntuación</label>
+
+            @for (int i = 0; i < form.Reglas.Count; i++)
+            {
+                var idx = i;
+
+                <div style="display:flex;gap:.5rem;margin-bottom:.5rem;align-items:end;">
+                    <div class="form-group" style="margin-bottom:0;flex:1;">
+                        <label style="font-size:.75rem;">Desviación</label>
+                        <input type="number" min="0" @bind="form.Reglas[idx].Desviacion" />
+                    </div>
+
+                    <div class="form-group" style="margin-bottom:0;flex:1;">
+                        <label style="font-size:.75rem;">Puntaje</label>
+                        <input type="number" min="0" @bind="form.Reglas[idx].Puntaje" />
+                    </div>
+
+                    <button type="button" class="btn btn-danger" @onclick="() => form.Reglas.RemoveAt(idx)">✕</button>
+                </div>
+            }
+
+            <button type="button"
+                    class="btn"
+                    style="background:var(--border);margin-bottom:1rem;"
+                    @onclick="() => form.Reglas.Add(new ReglaPuntuacionDto())">
+                + Agregar regla
+            </button>
+
+            @if (formError != null)
+            {
+                <p class="error">@formError</p>
+            }
+
+            <button class="btn btn-primary" @onclick="Crear" disabled="@saving">
+                @(saving ? "Creando..." : "Crear plantilla")
+            </button>
+        </div>
+    }
+
+    @if (errorGeneral != null)
+    {
+        <p class="error">@errorGeneral</p>
+    }
+
+    @if (loading)
+    {
+        <p>Cargando...</p>
+    }
+    else
+    {
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Evento</th>
+                    <th>Límite (min)</th>
+                    <th>Monto</th>
+                    <th>Reglas</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                @foreach (var pl in plantillas)
+                {
+                    <tr>
+                        <td>@pl.Nombre</td>
+                        <td>@pl.EventoDeportivo</td>
+                        <td>@pl.TiempoLimitePrevioMinutos</td>
+                        <td>$@pl.MontoEntrada</td>
+                        <td>@(pl.Reglas?.Count ?? 0)</td>
+                        <td>
+                            <button class="btn btn-danger" @onclick="() => Eliminar(pl.Id)">Eliminar</button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        @if (plantillas.Count == 0)
+        {
+            <p class="empty">No hay plantillas registradas.</p>
+        }
     }
 }
 
 @code {
-    private List<PlantillaPencaResponseDto> plantillas = new();
-    private List<EventoDeportivoResponseDto> eventos = new();
+    private List<PlantillaResponseDto> plantillas = new();
+    private List<CatalogoSimpleDto> eventos = new();
+
     private bool loading = true;
     private bool saving = false;
     private bool mostrarForm = false;
+
     private string? formError;
     private string? errorGeneral;
-    private PlantillaPencaRequestDto form = new()
-    {
-        TiempoLimitePrevioMinutos = 60,
-        MontoEntrada = 100,
-        PorcentajeComision = 10,
-        PuntajeGanador = 2,
-        Reglas = new() { new ReglaPuntuacionDto { Desviacion = 0, Puntaje = 3 } }
-    };
+
+    private PlantillaRequestDto form = CrearFormularioInicial();
 
     protected override async Task OnSesionValidaAsync()
     {
@@ -149,18 +175,22 @@ else
 
     private async Task Cargar()
     {
-        var pl = await PlantillaService.ObtenerTodasAsync();
-        plantillas = pl.ToList();
-        var ev = await EventoService.ObtenerTodosAsync();
-        eventos = ev.ToList();
+        PlantillasApiClient.SetToken(AdminToken!);
+
+        plantillas = await PlantillasApiClient.ObtenerTodosAsync();
+        eventos = await PlantillasApiClient.ObtenerEventosAsync();
         loading = false;
     }
 
     private async Task Crear()
     {
-        saving = true; formError = null;
+        saving = true;
+        formError = null;
+
         try
         {
+            PlantillasApiClient.SetToken(AdminToken!);
+
             if (string.IsNullOrWhiteSpace(form.Nombre))
             {
                 formError = "El nombre de la plantilla es obligatorio.";
@@ -179,30 +209,54 @@ else
                 return;
             }
 
-            var nueva = await PlantillaService.CrearAsync(form);
+            var nueva = await PlantillasApiClient.CrearAsync(form);
+
             plantillas.Add(nueva);
-            form = new()
-            {
-                TiempoLimitePrevioMinutos = 60,
-                MontoEntrada = 100,
-                PorcentajeComision = 10,
-                PuntajeGanador = 2,
-                Reglas = new() { new ReglaPuntuacionDto { Desviacion = 0, Puntaje = 3 } }
-            };
+            form = CrearFormularioInicial();
             mostrarForm = false;
         }
-        catch (Exception ex) { formError = ex.Message; }
-        finally { saving = false; }
+        catch (Exception ex)
+        {
+            formError = ex.Message;
+        }
+        finally
+        {
+            saving = false;
+        }
     }
 
     private async Task Eliminar(Guid id)
     {
         try
         {
-            await PlantillaService.EliminarAsync(id);
+            PlantillasApiClient.SetToken(AdminToken!);
+
+            await PlantillasApiClient.EliminarAsync(id);
             plantillas.RemoveAll(p => p.Id == id);
             errorGeneral = null;
         }
-        catch (Exception ex) { errorGeneral = ex.Message; }
+        catch (Exception ex)
+        {
+            errorGeneral = ex.Message;
+        }
+    }
+
+    private static PlantillaRequestDto CrearFormularioInicial()
+    {
+        return new PlantillaRequestDto
+        {
+            TiempoLimitePrevioMinutos = 60,
+            MontoEntrada = 100,
+            PorcentajeComision = 10,
+            PuntajeGanador = 2,
+            Reglas = new()
+            {
+                new ReglaPuntuacionDto
+                {
+                    Desviacion = 0,
+                    Puntaje = 3
+                }
+            }
+        };
     }
 }

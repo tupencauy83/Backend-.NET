@@ -11,3 +11,5 @@ obj/
 
 # Logs
 *.log
+
+**/tupencauy-key.json

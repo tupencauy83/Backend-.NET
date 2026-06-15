@@ -11,6 +11,7 @@ public abstract class AdminProtectedPage : ComponentBase
 
     protected bool VerificandoSesion { get; set; } = true;
     protected bool SesionValida { get; set; }
+    protected string? AdminToken { get; private set; }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -31,6 +32,7 @@ public abstract class AdminProtectedPage : ComponentBase
 
         SesionValida = true;
         VerificandoSesion = false;
+        AdminToken = token;
 
         await OnSesionValidaAsync();
 

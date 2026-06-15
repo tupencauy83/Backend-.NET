@@ -19,7 +19,7 @@ namespace TuPenca.API.Controllers
         }
 
         [HttpGet]
-        [Authorize(Roles = "AdministradorSitio,UsuarioComun")]
+        [Authorize]
         public async Task<IActionResult> ObtenerTodas()
         {
             var response = await _pencaService.ObtenerTodasAsync();

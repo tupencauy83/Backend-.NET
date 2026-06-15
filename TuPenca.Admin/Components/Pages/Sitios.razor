@@ -1,8 +1,8 @@
 @page "/sitios"
-@using TuPenca.Application.Interfaces.Services
-@using TuPenca.Application.DTOs.Sitio
-@using TuPenca.Domain.Enums
-@inject ISitioService SitioService
+@using TuPenca.Admin.Models.Enums
+@using TuPenca.Admin.Services
+@using TuPenca.Admin.DTOs.Sitio
+@inject SitiosApiClient SitiosApiClient
 @inherits AdminProtectedPage
 @rendermode InteractiveServer
 
@@ -40,7 +40,7 @@ else
                     <td>@sitio.UrlPropia</td>
                     <td>@sitio.Estado</td>
                     <td>
-                        @if (sitio.Estado == TuPenca.Domain.Enums.EstadoSitio.Pendiente)
+                        @if (sitio.Estado == EstadoSitio.Pendiente)
                         {
                             <button class="btn btn-primary" @onclick="() => Aprobar(sitio.Id)">Aprobar</button>
                             <button class="btn" style="background:#64748b;color:#fff;margin-left:.5rem;" @onclick="() => Rechazar(sitio.Id)">Rechazar</button>
@@ -59,7 +59,7 @@ else
 }
 
 @code {
-    private List<SitioDto> sitios = new();
+    private List<SitioRequestDto> sitios = new();
     private bool loading = true;
     private string? error;
 
@@ -73,7 +73,8 @@ else
         loading = true; error = null;
         try
         {
-            var result = await SitioService.ObtenerSitiosAsync();
+            SitiosApiClient.SetToken(AdminToken!);
+            var result = await SitiosApiClient.ObtenerTodosAsync();
             sitios = result.ToList();
         }
         catch (Exception ex) { error = ex.Message; }
@@ -84,7 +85,7 @@ else
     {
         try
         {
-            await SitioService.EliminarSitioAsync(id);
+            await SitiosApiClient.EliminarAsync(id);
             sitios.RemoveAll(s => s.Id == id);
         }
         catch (Exception ex) { error = ex.Message; }
@@ -94,7 +95,7 @@ else
     {
         try
         {
-            var response = await SitioService.AprobarSitioAsync(id);
+            var response = await SitiosApiClient.AprobarAsync(id);
             if (response.Mensaje.Contains("no encontrado", StringComparison.OrdinalIgnoreCase))
                 error = response.Mensaje;
             await Cargar();
@@ -106,7 +107,7 @@ else
     {
         try
         {
-            var response = await SitioService.RechazarSitioAsync(id);
+            var response = await SitiosApiClient.RechazarAsync(id);
             if (response.Mensaje.Contains("no encontrado", StringComparison.OrdinalIgnoreCase))
                 error = response.Mensaje;
             await Cargar();
