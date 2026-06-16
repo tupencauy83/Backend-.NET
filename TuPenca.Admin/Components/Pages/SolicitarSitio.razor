@@ -49,21 +49,7 @@
 
                 <div class="public-form-group">
                     <label>Dirección del sitio</label>
-                    <div class="subdominio-input">
-                        <input class="public-form-control subdominio-input__field"
-                               placeholder="miclub"
-                               value="@Subdominio"
-                               @oninput="OnSubdominioInput" />
-                        <span class="subdominio-input__suffix">.@SitioUrlHelper.DominioBase</span>
-                    </div>
-                    @if (!string.IsNullOrWhiteSpace(UrlPreview))
-                    {
-                        <small>Tu sitio quedará en <strong>@UrlPreview</strong></small>
-                    }
-                    else
-                    {
-                        <small>Solo letras minúsculas, números y guiones (sin puntos).</small>
-                    }
+                    <SubdominioSitioInput @bind-Value="Subdominio" />
                 </div>
 
                 <div class="public-form-row">
@@ -120,7 +106,6 @@
     };
 
     private string Subdominio = string.Empty;
-    private string? UrlPreview => SitioUrlHelper.ConstruirUrlPropia(Subdominio);
 
     private bool Enviando;
     private bool LogoSeleccionado;
@@ -134,6 +119,8 @@
 
         try
         {
+            Subdominio = SitioUrlHelper.NormalizarSubdominio(Subdominio);
+
             var url = SitioUrlHelper.ConstruirUrlPropia(Subdominio);
             if (url is null)
             {
@@ -149,7 +136,7 @@
         }
         catch (Exception ex)
         {
-            MensajeError = $"No se pudo enviar la solicitud: {ex.Message}";
+            MensajeError = MostrarMensajeError(ex.Message);
         }
         finally
         {
@@ -157,9 +144,22 @@
         }
     }
 
-    private void OnSubdominioInput(ChangeEventArgs e)
+    private static string MostrarMensajeError(string? mensaje)
     {
-        Subdominio = SitioUrlHelper.NormalizarSubdominio(e.Value?.ToString());
+        var limpio = ApiResponseHelper.ExtraerMensaje(mensaje?.Trim() ?? string.Empty);
+
+        if (string.IsNullOrWhiteSpace(limpio))
+            return "No se pudo enviar la solicitud. Intentá de nuevo.";
+
+        if (limpio.Contains("email", StringComparison.OrdinalIgnoreCase) ||
+            limpio.Contains("correo", StringComparison.OrdinalIgnoreCase) ||
+            limpio.Contains("dirección", StringComparison.OrdinalIgnoreCase) ||
+            limpio.Contains("direccion", StringComparison.OrdinalIgnoreCase))
+        {
+            return limpio;
+        }
+
+        return $"No se pudo enviar la solicitud: {limpio}";
     }
 
     private async Task CargarLogo(InputFileChangeEventArgs e)

@@ -73,10 +73,7 @@ public class SitiosApiClient
             return data;
         }
 
-        var error = await response.Content.ReadAsStringAsync();
-
-        throw new Exception(string.IsNullOrWhiteSpace(error)
-            ? "Ocurrió un error al comunicarse con la API."
-            : error);
+        var error = await ApiResponseHelper.LeerMensajeErrorAsync(response);
+        throw new Exception(error);
     }
 }

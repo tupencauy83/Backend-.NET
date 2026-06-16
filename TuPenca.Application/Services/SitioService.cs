@@ -93,6 +93,14 @@ namespace TuPenca.Application.Services
             if (existentes.Any(s => string.Equals(SitioUrlHelper.NormalizarHost(s.UrlPropia), url, StringComparison.OrdinalIgnoreCase)))
                 throw new Exception("Esa dirección ya está en uso. Elegí otro nombre.");
 
+            var email = sitioDto.Email.Trim();
+            if (string.IsNullOrWhiteSpace(email))
+                throw new Exception("El email de contacto es obligatorio.");
+
+            var adminPlataforma = await _unitOfWork.Administrador.GetByEmailAsync(email);
+            if (adminPlataforma is not null)
+                throw new Exception("Ese email pertenece a un administrador de plataforma. Usá otro correo.");
+
             var sitio = new Sitio()
             {
                 Id = Guid.NewGuid(),
@@ -111,7 +119,7 @@ namespace TuPenca.Application.Services
             {
                 Id = Guid.NewGuid(),
                 Nombre = sitioDto.NombreUsuario,
-                Email = sitioDto.Email,
+                Email = email,
                 PasswordHash = "",
                 Rol = RolUsuario.AdministradorSitio,
                 FechaRegistro = DateTime.UtcNow,

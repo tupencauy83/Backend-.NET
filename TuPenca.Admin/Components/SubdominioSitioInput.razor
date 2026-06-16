@@ -1,0 +1,52 @@
+@using TuPenca.Admin.Helpers
+
+<div class="subdominio-input">
+    <input class="public-form-control subdominio-input__field"
+           placeholder="@Placeholder"
+           value="@_textoVisual"
+           @oninput="OnInput"
+           @onfocusout="OnFocusOut" />
+    <span class="subdominio-input__suffix">.@SitioUrlHelper.DominioBase</span>
+</div>
+@if (!string.IsNullOrWhiteSpace(UrlPreview))
+{
+    <small>Tu sitio quedará en <strong>@UrlPreview</strong></small>
+}
+else
+{
+    <small>Solo letras minúsculas, números y guiones (sin puntos).</small>
+}
+
+@code {
+    [Parameter] public string Value { get; set; } = string.Empty;
+    [Parameter] public EventCallback<string> ValueChanged { get; set; }
+    [Parameter] public string Placeholder { get; set; } = "miclub";
+
+    private string _textoVisual = string.Empty;
+    private bool _editando;
+
+    private string? UrlPreview => SitioUrlHelper.ConstruirUrlPropia(
+        SitioUrlHelper.NormalizarSubdominio(_textoVisual));
+
+    protected override void OnParametersSet()
+    {
+        if (!_editando && !string.Equals(Value, _textoVisual, StringComparison.Ordinal))
+            _textoVisual = Value;
+    }
+
+    private void OnInput(ChangeEventArgs e)
+    {
+        _editando = true;
+        _textoVisual = e.Value?.ToString() ?? string.Empty;
+    }
+
+    private async Task OnFocusOut()
+    {
+        _editando = false;
+        var normalizado = SitioUrlHelper.NormalizarSubdominio(_textoVisual);
+        _textoVisual = normalizado;
+
+        if (!string.Equals(Value, normalizado, StringComparison.Ordinal))
+            await ValueChanged.InvokeAsync(normalizado);
+    }
+}
