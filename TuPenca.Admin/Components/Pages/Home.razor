@@ -1,4 +1,4 @@
-@page "/estadisticas"
+﻿@page "/estadisticas"
 @using System.Globalization
 @using System.Text
 @using TuPenca.Admin.Services
@@ -7,7 +7,6 @@
 @inject EstadisticasApiClient EstadisticasApiClient
 @inherits AdminProtectedPage
 @rendermode InteractiveServer
-@implements IDisposable
 
 <div class="stats-page">
     <h1>Estadísticas globales</h1>
@@ -41,9 +40,18 @@
             <div class="stats-filtros__grid">
                 <div class="form-group">
                     <label for="buscarSitio">Buscar sitio</label>
-                    <input id="buscarSitio" type="search" placeholder="Nombre o dominio..."
-                           value="@buscarSitio" @oninput="OnBuscarInput" />
-                    <span class="form-hint">Se aplica al escribir (con una breve pausa)</span>
+                    <form class="stats-buscar-sitio" @onsubmit="SubmitBusqueda" @onsubmit:preventDefault>
+                        <InputText id="buscarSitio"
+                                   class="public-form-control"
+                                   type="search"
+                                   placeholder="Nombre o dominio..."
+                                   @bind-Value="_buscarSitioVisual"
+                                   @bind-Value:after="AplicarBusquedaServidor" />
+                        <button type="submit" class="btn btn-outline btn-sm" disabled="@loading">
+                            Buscar
+                        </button>
+                    </form>
+                    <span class="form-hint">Escribí y pulsá Buscar, Enter o salí del campo (Tab)</span>
                 </div>
 
                 <div class="form-group">
@@ -237,13 +245,13 @@
     private string? error;
 
     private string buscarSitio = string.Empty;
+    private string _buscarSitioVisual = string.Empty;
     private string estadoSitioStr = string.Empty;
     private string fechaDesdeStr = string.Empty;
     private string fechaHastaStr = string.Empty;
     private string minUsuariosStr = string.Empty;
     private string orden = "recaudado";
 
-    private CancellationTokenSource? _debounceCts;
     private bool _filtrosInicializados;
 
     private bool HayFiltrosActivos =>
@@ -317,22 +325,20 @@
         _filtrosInicializados = true;
     }
 
-    private async Task OnBuscarInput(ChangeEventArgs e)
+    private async Task AplicarBusquedaServidor()
     {
-        buscarSitio = e.Value?.ToString() ?? string.Empty;
-        _debounceCts?.Cancel();
-        _debounceCts = new CancellationTokenSource();
-        var token = _debounceCts.Token;
+        if (!_filtrosInicializados)
+            return;
 
-        try
-        {
-            await Task.Delay(400, token);
-            await CargarEstadisticas();
-        }
-        catch (TaskCanceledException)
-        {
-        }
+        var termino = _buscarSitioVisual.Trim();
+        if (string.Equals(buscarSitio, termino, StringComparison.Ordinal))
+            return;
+
+        buscarSitio = termino;
+        await CargarEstadisticas();
     }
+
+    private Task SubmitBusqueda() => AplicarBusquedaServidor();
 
     private async Task OnFechaDesdeChanged(ChangeEventArgs e)
     {
@@ -357,6 +363,7 @@
     private async Task LimpiarFiltros()
     {
         buscarSitio = string.Empty;
+        _buscarSitioVisual = string.Empty;
         estadoSitioStr = string.Empty;
         fechaDesdeStr = string.Empty;
         fechaHastaStr = string.Empty;
@@ -477,10 +484,4 @@
         EstadoSitio.Pendiente => "badge-warning",
         _ => "badge-muted"
     };
-
-    public void Dispose()
-    {
-        _debounceCts?.Cancel();
-        _debounceCts?.Dispose();
-    }
 }

@@ -654,6 +654,17 @@ h1 {
     gap: 1rem;
 }
 
+.stats-buscar-sitio {
+    display: flex;
+    gap: .5rem;
+    align-items: stretch;
+}
+
+.stats-buscar-sitio .public-form-control {
+    flex: 1;
+    min-width: 0;
+}
+
 .form-hint {
     color: var(--muted);
     font-size: .75rem;
