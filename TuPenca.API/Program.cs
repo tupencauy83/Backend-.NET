@@ -203,6 +203,7 @@ app.UseAuthentication();   // siempre antes de Authorization
 
 // ─── Middleware ───────────────────────────────────────────────
 app.UseMiddleware<SitioResolverMiddleware>();
+app.UseMiddleware<SitioActivoMiddleware>();
 
 app.UseAuthorization();
 

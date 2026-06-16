@@ -79,6 +79,9 @@ namespace TuPenca.API.Controllers
             if (sitio == null)
                 return NotFound();
 
+            if (sitio.Estado != Domain.Enums.EstadoSitio.Activo)
+                return StatusCode(StatusCodes.Status403Forbidden, "Este sitio fue desactivado o no está disponible.");
+
             var result = new
             {
                 sitio.ColorPrimario,
