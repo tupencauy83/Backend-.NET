@@ -1,21 +1,22 @@
 @using TuPenca.Admin.Helpers
 
 <div class="subdominio-input">
-    <input class="public-form-control subdominio-input__field"
-           placeholder="@Placeholder"
-           value="@_textoVisual"
-           @oninput="OnInput"
-           @onfocusout="OnFocusOut" />
+    <InputText class="public-form-control subdominio-input__field"
+               @bind-Value="_textoVisual"
+               @bind-Value:after="OnTextoActualizado"
+               placeholder="@Placeholder" />
     <span class="subdominio-input__suffix">.@SitioUrlHelper.DominioBase</span>
 </div>
-@if (!string.IsNullOrWhiteSpace(UrlPreview))
-{
-    <small>Tu sitio quedará en <strong>@UrlPreview</strong></small>
-}
-else
-{
-    <small>Solo letras minúsculas, números y guiones (sin puntos).</small>
-}
+<small class="subdominio-ayuda">
+    @if (!string.IsNullOrWhiteSpace(_urlPreview))
+    {
+        <span>Tu sitio quedará en <strong>@_urlPreview</strong></span>
+    }
+    else
+    {
+        <span>Solo letras minúsculas, números y guiones (sin puntos).</span>
+    }
+</small>
 
 @code {
     [Parameter] public string Value { get; set; } = string.Empty;
@@ -23,28 +24,22 @@ else
     [Parameter] public string Placeholder { get; set; } = "miclub";
 
     private string _textoVisual = string.Empty;
-    private bool _editando;
-
-    private string? UrlPreview => SitioUrlHelper.ConstruirUrlPropia(
-        SitioUrlHelper.NormalizarSubdominio(_textoVisual));
+    private string? _urlPreview;
 
     protected override void OnParametersSet()
     {
-        if (!_editando && !string.Equals(Value, _textoVisual, StringComparison.Ordinal))
-            _textoVisual = Value;
+        if (string.Equals(Value, _textoVisual, StringComparison.Ordinal))
+            return;
+
+        _textoVisual = Value;
+        _urlPreview = SitioUrlHelper.ConstruirUrlPropia(Value);
     }
 
-    private void OnInput(ChangeEventArgs e)
+    private async Task OnTextoActualizado()
     {
-        _editando = true;
-        _textoVisual = e.Value?.ToString() ?? string.Empty;
-    }
-
-    private async Task OnFocusOut()
-    {
-        _editando = false;
         var normalizado = SitioUrlHelper.NormalizarSubdominio(_textoVisual);
         _textoVisual = normalizado;
+        _urlPreview = SitioUrlHelper.ConstruirUrlPropia(normalizado);
 
         if (!string.Equals(Value, normalizado, StringComparison.Ordinal))
             await ValueChanged.InvokeAsync(normalizado);
