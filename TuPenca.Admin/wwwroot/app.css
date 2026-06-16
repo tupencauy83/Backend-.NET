@@ -492,6 +492,32 @@ h1 {
     font-size: 0.85rem;
 }
 
+.subdominio-input {
+    display: flex;
+    align-items: stretch;
+    gap: 0;
+}
+
+.subdominio-input__field {
+    flex: 1;
+    min-width: 0;
+    border-top-right-radius: 0 !important;
+    border-bottom-right-radius: 0 !important;
+}
+
+.subdominio-input__suffix {
+    display: flex;
+    align-items: center;
+    padding: 0 12px;
+    background: #f1f5f9;
+    border: 1px solid #cbd5e1;
+    border-left: none;
+    border-radius: 0 10px 10px 0;
+    color: var(--muted);
+    font-size: 0.9rem;
+    white-space: nowrap;
+}
+
 @media (max-width: 700px) {
     .public-form-row {
         grid-template-columns: 1fr;

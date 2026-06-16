@@ -3,6 +3,7 @@
 @using TuPenca.Admin.DTOs.Sitio
 @using TuPenca.Admin.Models.Enums
 @using TuPenca.Admin.Services
+@using TuPenca.Admin.Helpers
 @inject SitiosApiClient SitiosApiClient
 
 @rendermode InteractiveServer
@@ -47,11 +48,22 @@
                 </div>
 
                 <div class="public-form-group">
-                    <label>Dominio del sitio</label>
-                    <InputText class="public-form-control"
-                               placeholder="Ej: pencaclub.com"
-                               @bind-Value="Formulario.UrlPropia" />
-                    <small>Sin https://. Debe coincidir con la URL donde entrarán los usuarios.</small>
+                    <label>Dirección del sitio</label>
+                    <div class="subdominio-input">
+                        <input class="public-form-control subdominio-input__field"
+                               placeholder="miclub"
+                               value="@Subdominio"
+                               @oninput="OnSubdominioInput" />
+                        <span class="subdominio-input__suffix">.@SitioUrlHelper.DominioBase</span>
+                    </div>
+                    @if (!string.IsNullOrWhiteSpace(UrlPreview))
+                    {
+                        <small>Tu sitio quedará en <strong>@UrlPreview</strong></small>
+                    }
+                    else
+                    {
+                        <small>Solo letras minúsculas, números y guiones (sin puntos).</small>
+                    }
                 </div>
 
                 <div class="public-form-row">
@@ -107,6 +119,9 @@
         TipoRegistro = TipoRegistro.Con_Autorizacion
     };
 
+    private string Subdominio = string.Empty;
+    private string? UrlPreview => SitioUrlHelper.ConstruirUrlPropia(Subdominio);
+
     private bool Enviando;
     private bool LogoSeleccionado;
     private string? MensajeExito;
@@ -119,7 +134,14 @@
 
         try
         {
-            Formulario.UrlPropia = NormalizarDominio(Formulario.UrlPropia);
+            var url = SitioUrlHelper.ConstruirUrlPropia(Subdominio);
+            if (url is null)
+            {
+                MensajeError = "Ingresá un nombre válido: letras, números y guiones (sin puntos).";
+                return;
+            }
+
+            Formulario.UrlPropia = url;
 
             await SitiosApiClient.SolicitarAsync(Formulario);
 
@@ -133,6 +155,11 @@
         {
             Enviando = false;
         }
+    }
+
+    private void OnSubdominioInput(ChangeEventArgs e)
+    {
+        Subdominio = SitioUrlHelper.NormalizarSubdominio(e.Value?.ToString());
     }
 
     private async Task CargarLogo(InputFileChangeEventArgs e)
@@ -149,18 +176,5 @@
 
         Formulario.Logo = ms.ToArray();
         LogoSeleccionado = true;
-    }
-
-    private static string NormalizarDominio(string? dominio)
-    {
-        if (string.IsNullOrWhiteSpace(dominio))
-            return string.Empty;
-
-        return dominio
-            .Trim()
-            .Replace("https://", "")
-            .Replace("http://", "")
-            .TrimEnd('/')
-            .ToLower();
     }
 }
