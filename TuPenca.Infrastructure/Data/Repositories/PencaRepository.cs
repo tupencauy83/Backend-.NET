@@ -22,6 +22,7 @@ namespace TuPenca.Infrastructure.Data.Repositories
             => await _context.Pencas
                 .Include(p => p.Plantilla)
                     .ThenInclude(pl => pl.Evento)
+                .Include(p => p.Sitio)
                 .ToListAsync();
     }
 }

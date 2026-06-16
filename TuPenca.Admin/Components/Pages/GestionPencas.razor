@@ -9,7 +9,6 @@
 <h1>Pencas en la plataforma</h1>
 <p class="text-muted" style="margin-bottom: 1.25rem;">
     Vista de consulta de todas las instancias creadas por los sitios.
-    Iniciar, finalizar y eliminar pencas lo gestiona el administrador de cada sitio.
 </p>
 
 @if (VerificandoSesion)
@@ -31,6 +30,7 @@ else
         <thead>
             <tr>
                 <th>Nombre</th>
+                <th>Sitio</th>
                 <th>Plantilla</th>
                 <th>Evento</th>
                 <th>Estado</th>
@@ -43,6 +43,14 @@ else
             {
                 <tr>
                     <td>@penca.Nombre</td>
+                    <td>
+                        <span>@penca.SitioNombre</span>
+                        @if (!string.IsNullOrWhiteSpace(penca.SitioUrl))
+                        {
+                            <br />
+                            <span class="text-muted" style="font-size: .85rem;">@penca.SitioUrl</span>
+                        }
+                    </td>
                     <td>@penca.PlantillaNombre</td>
                     <td>@penca.EventoDeportivo</td>
                     <td>

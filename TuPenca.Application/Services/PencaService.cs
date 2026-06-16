@@ -31,7 +31,9 @@ namespace TuPenca.Application.Services
                 PlantillaNombre = p.Plantilla?.Nombre ?? string.Empty,
                 EventoDeportivo = p.Plantilla?.Evento?.Nombre ?? string.Empty,
                 EventoDeportivoId = p.Plantilla?.EventoDeportivoId,
-                MontoEntrada = p.Plantilla?.MontoEntrada ?? 0
+                MontoEntrada = p.Plantilla?.MontoEntrada ?? 0,
+                SitioNombre = p.Sitio?.Nombre ?? string.Empty,
+                SitioUrl = p.Sitio?.UrlPropia ?? string.Empty,
             });
         }
 
