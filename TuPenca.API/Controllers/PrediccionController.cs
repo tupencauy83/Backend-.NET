@@ -50,19 +50,14 @@ namespace TuPenca.API.Controllers
 
 
 
-        [HttpGet("mis-predicciones/{pencaId}")]
-        [Authorize(Roles = "UsuarioComun")]
-        public async Task<IActionResult> ObtenerMisPrediccionesYTodosLosPartidos(Guid pencaId)
+        [HttpGet("{pencaId}/historial")]
+        public async Task<IActionResult> ObtenerHistorial(Guid pencaId)
         {
             try
             {
-                var usuarioId = Guid.Parse(
-                    User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
-
-                var resultado = await _prediccionService
-                    .ObtenerMisPrediccionesAsync(usuarioId, pencaId);
-
-                return Ok(resultado);
+                var usuarioId = Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+                var response = await _prediccionService.ObtenerHistorialAsync(usuarioId, pencaId);
+                return Ok(response);
             }
             catch (Exception ex)
             {
