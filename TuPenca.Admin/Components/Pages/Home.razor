@@ -1,4 +1,4 @@
-﻿@page "/estadisticas"
+@page "/estadisticas"
 @using System.Globalization
 @using System.Text
 @using TuPenca.Admin.Services
@@ -177,9 +177,12 @@
 
             <div class="stats-table-header">
                 <h2>Detalle por sitio</h2>
-                <button type="button" class="btn btn-outline btn-sm" @onclick="ExportarCsv" disabled="@(!SitiosTabla.Any())">
+                <a class="btn btn-outline btn-sm @(SitiosTabla.Any() ? "" : "disabled")"
+                   href="@ObtenerCsvDataUri()"
+                   download="@ObtenerCsvNombreArchivo()"
+                   aria-disabled="@(!SitiosTabla.Any())">
                     Exportar CSV
-                </button>
+                </a>
             </div>
 
             @if (SitiosTabla.Count == 0)
@@ -425,8 +428,14 @@
             : string.Join(" · ", partes);
     }
 
-    private async Task ExportarCsv()
+    private string ObtenerCsvNombreArchivo() =>
+        $"estadisticas-globales-{DateTime.Now:yyyyMMdd-HHmm}.csv";
+
+    private string ObtenerCsvDataUri()
     {
+        if (!SitiosTabla.Any())
+            return "about:blank";
+
         var sb = new StringBuilder();
         sb.AppendLine("Sitio,Dominio,Estado,Usuarios,Pendientes,Pencas activas,Pencas finalizadas,Inscripciones,Recaudado,Comisiones");
 
@@ -444,8 +453,8 @@
             sb.AppendLine(sitio.TotalComisiones.ToString(CultureInfo.InvariantCulture));
         }
 
-        var nombre = $"estadisticas-globales-{DateTime.Now:yyyyMMdd-HHmm}.csv";
-        await JS.InvokeVoidAsync("tuPencaAdmin.downloadTextFile", nombre, sb.ToString(), "text/csv;charset=utf-8;");
+        var bytes = Encoding.UTF8.GetBytes(sb.ToString());
+        return $"data:text/csv;charset=utf-8;base64,{Convert.ToBase64String(bytes)}";
     }
 
     private static string EscaparCsv(string valor) => valor.Replace("\"", "\"\"");

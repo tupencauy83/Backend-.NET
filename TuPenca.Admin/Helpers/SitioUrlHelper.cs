@@ -4,7 +4,7 @@ namespace TuPenca.Admin.Helpers;
 
 public static class SitioUrlHelper
 {
-    public const string DominioBase = "tupenca.lat.uy";
+    public const string DominioBase = "tupencauy.lat";
 
     private static readonly Regex SlugValido = new(
         @"^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$",

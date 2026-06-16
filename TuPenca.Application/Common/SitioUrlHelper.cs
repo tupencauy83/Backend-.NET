@@ -4,7 +4,7 @@ namespace TuPenca.Application.Common;
 
 public static class SitioUrlHelper
 {
-    public const string DominioBase = "tupenca.lat.uy";
+    public const string DominioBase = "tupencauy.lat";
 
     private static readonly Regex SlugValido = new(
         @"^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$",
@@ -12,7 +12,7 @@ public static class SitioUrlHelper
 
     /// <summary>
     /// Extrae el subdominio (sin puntos) desde lo que escribió el usuario.
-    /// Acepta "miclub" o "miclub.tupenca.lat.uy" por si pegan la URL completa.
+    /// Acepta "miclub" o "miclub.tupencauy.lat" por si pegan la URL completa.
     /// </summary>
     public static string NormalizarSubdominio(string? entrada)
     {

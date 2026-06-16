@@ -16,8 +16,7 @@ namespace TuPenca.Infrastructure.Middleware
         {
             var host = NormalizarHost(context.Request.Headers["X-Sitio"].FirstOrDefault() ?? context.Request.Host.Host);
 
-            var sitio = await db.Sitios
-                .FirstOrDefaultAsync(t => t.UrlPropia == host);
+            var sitio = await db.Sitios.FirstOrDefaultAsync(t => t.UrlPropia == host);
 
             if (sitio != null)
             {
