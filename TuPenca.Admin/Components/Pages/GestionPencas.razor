@@ -6,7 +6,11 @@
 @inherits AdminProtectedPage
 @rendermode InteractiveServer
 
-<h1>Gestión de Pencas</h1>
+<h1>Pencas en la plataforma</h1>
+<p class="text-muted" style="margin-bottom: 1.25rem;">
+    Vista de consulta de todas las instancias creadas por los sitios.
+    Iniciar, finalizar y eliminar pencas lo gestiona el administrador de cada sitio.
+</p>
 
 @if (VerificandoSesion)
 {
@@ -19,6 +23,7 @@ else if (loading)
 else if (error != null)
 {
     <p class="error">@error</p>
+    <button class="btn" @onclick="Cargar">Reintentar</button>
 }
 else
 {
@@ -46,27 +51,17 @@ else
                         </span>
                     </td>
                     <td>
-                        @if (penca.Estado == EstadoPenca.Abierta)
-                        {
-                            <button class="btn btn-primary"
-                                    @onclick="() => CambiarEstado(penca.Id, EstadoPenca.EnCurso)">
-                                Iniciar
-                            </button>
-                        }
-                        else if (penca.Estado == EstadoPenca.EnCurso)
-                        {
-                            <button class="btn btn-danger"
-                                    @onclick="() => CambiarEstado(penca.Id, EstadoPenca.Finalizada)">
-                                Finalizar
-                            </button>
-                        }
-                        else if (penca.Estado == EstadoPenca.Finalizada)
+                        @if (penca.Estado == EstadoPenca.Finalizada)
                         {
                             <button class="btn"
                                     style="background:#64748b;color:#fff;"
-                                    @onclick="() => VerGanadores(penca.Id)">
+                                    @onclick="() => VerGanadores(penca.Id, penca.Nombre)">
                                 Ver ganadores
                             </button>
+                        }
+                        else
+                        {
+                            <span class="text-muted">—</span>
                         }
                     </td>
                 </tr>
@@ -80,46 +75,50 @@ else
     }
 }
 
-@if (ganadores != null && ganadores.Any())
+@if (ganadores != null)
 {
     <div class="form-card" style="margin-top: 1.5rem;">
-        <h3 style="margin-bottom: 1rem;">Ganadores</h3>
+        <h3 style="margin-bottom: 1rem;">
+            Ganadores@(pencaGanadoresNombre != null ? $" — {pencaGanadoresNombre}" : "")
+        </h3>
 
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>Posición</th>
-                    <th>Usuario</th>
-                    <th>Premio</th>
-                </tr>
-            </thead>
-
-            <tbody>
-                @foreach (var g in ganadores)
-                {
+        @if (ganadores.Any())
+        {
+            <table class="table">
+                <thead>
                     <tr>
-                        <td>@g.Posicion°</td>
-                        <td>@g.NombreUsuario</td>
-                        <td>$@g.Monto</td>
+                        <th>Posición</th>
+                        <th>Usuario</th>
+                        <th>Premio</th>
                     </tr>
-                }
-            </tbody>
-        </table>
-    </div>
-}
+                </thead>
 
-@if (mensaje != null)
-{
-    <p style="color: green; margin-top: 1rem;">@mensaje</p>
+                <tbody>
+                    @foreach (var g in ganadores)
+                    {
+                        <tr>
+                            <td>@g.Posicion°</td>
+                            <td>@g.NombreUsuario</td>
+                            <td>$@g.Monto</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+        else
+        {
+            <p class="text-muted">No hay premios registrados para esta penca.</p>
+        }
+    </div>
 }
 
 @code {
     private List<PencaResponseDto> pencas = new();
     private List<PremioResponseDto>? ganadores;
+    private string? pencaGanadoresNombre;
 
     private bool loading = true;
     private string? error;
-    private string? mensaje;
 
     protected override async Task OnSesionValidaAsync()
     {
@@ -128,6 +127,9 @@ else
 
     private async Task Cargar()
     {
+        loading = true;
+        error = null;
+
         try
         {
             PencasApiClient.SetToken(AdminToken!);
@@ -144,44 +146,21 @@ else
         }
     }
 
-    private async Task CambiarEstado(Guid pencaId, EstadoPenca nuevoEstado)
-    {
-        try
-        {
-            PencasApiClient.SetToken(AdminToken!);
-
-            mensaje = null;
-            ganadores = null;
-            error = null;
-
-            var actualizada = await PencasApiClient.CambiarEstadoAsync(pencaId, nuevoEstado);
-
-            var idx = pencas.FindIndex(p => p.Id == pencaId);
-
-            if (idx >= 0)
-                pencas[idx] = actualizada;
-
-            if (nuevoEstado == EstadoPenca.Finalizada)
-                mensaje = "Penca finalizada. Se calcularon los ganadores y premios.";
-        }
-        catch (Exception ex)
-        {
-            error = ex.Message;
-        }
-    }
-
-    private async Task VerGanadores(Guid pencaId)
+    private async Task VerGanadores(Guid pencaId, string nombrePenca)
     {
         try
         {
             PencasApiClient.SetToken(AdminToken!);
 
             error = null;
+            pencaGanadoresNombre = nombrePenca;
             ganadores = await PencasApiClient.ObtenerGanadoresAsync(pencaId);
         }
         catch (Exception ex)
         {
             error = ex.Message;
+            ganadores = null;
+            pencaGanadoresNombre = null;
         }
     }
 }
