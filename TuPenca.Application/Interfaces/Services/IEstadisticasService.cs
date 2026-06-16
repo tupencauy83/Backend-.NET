@@ -8,7 +8,7 @@ namespace TuPenca.Application.Interfaces.Services
 {
     public interface IEstadisticasService
     {
-        Task<EstadisticasGlobalesDto> ObtenerGlobalesAsync();
+        Task<EstadisticasGlobalesDto> ObtenerGlobalesAsync(EstadisticasGlobalesFiltroDto? filtro = null);
         Task<EstadisticasSitioDto> ObtenerPorSitioAsync(Guid sitioId, EstadisticasSitioFiltroDto? filtro = null);
     }
 }

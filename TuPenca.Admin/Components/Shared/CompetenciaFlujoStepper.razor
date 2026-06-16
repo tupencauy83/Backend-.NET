@@ -1,0 +1,54 @@
+@* Paso 1 = evento, 2 = partidos, 3 = plantilla *@
+
+<nav class="workflow-stepper" aria-label="Pasos para publicar una competencia">
+    <ol class="workflow-stepper__list">
+        <li class="workflow-stepper__item @(PasoActual == 1 ? "is-active" : PasoActual > 1 ? "is-done" : "")">
+            @if (PasoActual > 1 && EventoId.HasValue)
+            {
+                <a class="workflow-stepper__link" href="/eventos">1. Evento</a>
+            }
+            else
+            {
+                <span class="workflow-stepper__label">1. Evento</span>
+            }
+            <span class="workflow-stepper__hint">Datos generales y fechas</span>
+        </li>
+
+        <li class="workflow-stepper__item @(PasoActual == 2 ? "is-active" : PasoActual > 2 ? "is-done" : "")">
+            @if (EventoId.HasValue)
+            {
+                <a class="workflow-stepper__link" href="/eventos/@EventoId/resultados">2. Partidos</a>
+            }
+            else
+            {
+                <span class="workflow-stepper__label is-disabled">2. Partidos</span>
+            }
+            <span class="workflow-stepper__hint">Fixture y resultados</span>
+        </li>
+
+        <li class="workflow-stepper__item @(PasoActual == 3 ? "is-active" : "")">
+            @if (EventoId.HasValue)
+            {
+                <a class="workflow-stepper__link" href="/plantillas?eventoId=@EventoId">3. Plantilla</a>
+            }
+            else
+            {
+                <span class="workflow-stepper__label is-disabled">3. Plantilla</span>
+            }
+            <span class="workflow-stepper__hint">Reglas, premios y comisión</span>
+        </li>
+    </ol>
+
+    @if (!string.IsNullOrWhiteSpace(EventoNombre))
+    {
+        <p class="workflow-stepper__context">
+            Competencia: <strong>@EventoNombre</strong>
+        </p>
+    }
+</nav>
+
+@code {
+    [Parameter] public int PasoActual { get; set; } = 1;
+    [Parameter] public Guid? EventoId { get; set; }
+    [Parameter] public string? EventoNombre { get; set; }
+}

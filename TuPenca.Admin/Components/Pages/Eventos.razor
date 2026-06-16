@@ -1,130 +1,167 @@
 @page "/eventos"
 @using TuPenca.Admin.Services
 @using TuPenca.Admin.DTOs.Evento
+@using TuPenca.Admin.DTOs.Plantillas
+@using TuPenca.Admin.Helpers
 @inject EventosApiClient EventosApiClient
+@inject PlantillasApiClient PlantillasApiClient
 @inherits AdminProtectedPage
 @rendermode InteractiveServer
 
-<h1>Eventos Deportivos</h1>
+<div class="workflow-page">
+    <p class="workflow-breadcrumb">
+        <a href="/eventos">Competencias</a> · Paso 1 de 3
+    </p>
 
-<button class="btn btn-primary" @onclick="() => mostrarForm = !mostrarForm">
-    @(mostrarForm ? "Cancelar" : "+ Nuevo evento")
-</button>
+    <h1>Competencias deportivas</h1>
+    <p class="workflow-page__intro">
+        Para que los sitios puedan crear pencas, seguí estos tres pasos:
+        <strong>evento</strong> → <strong>partidos</strong> → <strong>plantilla</strong>.
+        Podés volver a cualquier paso desde la tabla o el indicador de arriba.
+    </p>
 
-@if (mostrarForm)
-{
-    <div class="form-card">
-        <div class="form-group">
-            <label>Nombre</label>
-            <input @bind="form.Nombre" />
-        </div>
+    <CompetenciaFlujoStepper PasoActual="1" />
 
-        <div class="form-row">
-            <div class="form-group">
-                <label>Fecha inicio</label>
-                <div style="display:flex;gap:.5rem;">
-                    <input type="date" @bind="form.FechaInicio" @bind:format="yyyy-MM-dd" style="flex:1;" />
-                    <input type="time" @bind="horaInicio" style="width:120px;" />
-                </div>
-            </div>
+    <button class="btn btn-primary" @onclick="ToggleFormulario">
+        @(mostrarForm ? "Cancelar" : "+ Nuevo evento")
+    </button>
 
-            <div class="form-group">
-                <label>Fecha fin</label>
-                <div style="display:flex;gap:.5rem;">
-                    <input type="date" @bind="form.FechaFin" @bind:format="yyyy-MM-dd" style="flex:1;" />
-                    <input type="time" @bind="horaFin" style="width:120px;" />
-                </div>
-            </div>
-        </div>
-
-        <div class="form-group">
-            <label>Deporte</label>
-            <select @bind="form.DeporteId">
-                <option value="@Guid.Empty">Seleccionar...</option>
-                @foreach (var d in deportes)
-                {
-                    <option value="@d.Id">@d.Nombre</option>
-                }
-            </select>
-
-            <div style="display:flex;gap:.5rem;margin-top:.35rem;">
-                <input @bind="nuevoDeporte" placeholder="Nuevo deporte..." style="flex:1;" />
-                <button type="button" class="btn" style="background:var(--border);" @onclick="CrearDeporte">+ Crear</button>
-            </div>
-        </div>
-
-        <div class="form-group">
-            <label>Tipo de competencia</label>
-            <select @bind="form.TipoCompetenciaId">
-                <option value="@Guid.Empty">Seleccionar...</option>
-                @foreach (var t in tiposComp)
-                {
-                    <option value="@t.Id">@t.Nombre</option>
-                }
-            </select>
-
-            <div style="display:flex;gap:.5rem;margin-top:.35rem;">
-                <input @bind="nuevoTipo" placeholder="Nuevo tipo..." style="flex:1;" />
-                <button type="button" class="btn" style="background:var(--border);" @onclick="CrearTipo">+ Crear</button>
-            </div>
-        </div>
-
-        @if (formError != null)
-        {
-            <p class="error">@formError</p>
-        }
-
-        <button class="btn btn-primary" @onclick="Crear" disabled="@saving">
-            @(saving ? "Creando..." : "Crear evento")
-        </button>
-    </div>
-}
-
-@if (VerificandoSesion)
-{
-    <p>Verificando sesión...</p>
-}
-else if (loading)
-{
-    <p>Cargando...</p>
-}
-else
-{
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Nombre</th>
-                <th>Inicio</th>
-                <th>Fin</th>
-                <th>Acciones</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var ev in eventos)
-            {
-                <tr>
-                    <td>@ev.Nombre</td>
-                    <td>@ev.FechaInicio.ToShortDateString()</td>
-                    <td>@ev.FechaFin.ToShortDateString()</td>
-                    <td>
-                        <a href="/eventos/@ev.Id/resultados" class="btn btn-primary">Resultados</a>
-                    </td>
-                </tr>
-            }
-        </tbody>
-    </table>
-
-    @if (eventos.Count == 0)
+    @if (mostrarForm)
     {
-        <p class="empty">No hay eventos registrados.</p>
-    }
-}
+        <div class="form-card">
+            <h2 class="stats-section-title">Paso 1 · Crear evento</h2>
 
+            <div class="form-group">
+                <label>Nombre</label>
+                <input @bind="form.Nombre" placeholder="Ej: Copa América 2026" />
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Fecha inicio (Uruguay)</label>
+                    <div style="display:flex;gap:.5rem;">
+                        <input type="date" value="@fechaInicioStr" @onchange="OnFechaInicioChanged" style="flex:1;" />
+                        <input type="time" @bind="horaInicio" style="width:120px;" />
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Fecha fin (Uruguay)</label>
+                    <div style="display:flex;gap:.5rem;">
+                        <input type="date" value="@fechaFinStr" @onchange="OnFechaFinChanged" style="flex:1;" />
+                        <input type="time" @bind="horaFin" style="width:120px;" />
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Deporte</label>
+                <select @bind="form.DeporteId">
+                    <option value="@Guid.Empty">Seleccionar...</option>
+                    @foreach (var d in deportes)
+                    {
+                        <option value="@d.Id">@d.Nombre</option>
+                    }
+                </select>
+
+                <div style="display:flex;gap:.5rem;margin-top:.35rem;">
+                    <input @bind="nuevoDeporte" placeholder="Nuevo deporte..." style="flex:1;" />
+                    <button type="button" class="btn" style="background:var(--border);" @onclick="CrearDeporte">+ Crear</button>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Tipo de competencia</label>
+                <select @bind="form.TipoCompetenciaId">
+                    <option value="@Guid.Empty">Seleccionar...</option>
+                    @foreach (var t in tiposComp)
+                    {
+                        <option value="@t.Id">@t.Nombre</option>
+                    }
+                </select>
+
+                <div style="display:flex;gap:.5rem;margin-top:.35rem;">
+                    <input @bind="nuevoTipo" placeholder="Nuevo tipo..." style="flex:1;" />
+                    <button type="button" class="btn" style="background:var(--border);" @onclick="CrearTipo">+ Crear</button>
+                </div>
+            </div>
+
+            @if (formError != null)
+            {
+                <p class="error">@formError</p>
+            }
+
+            <button class="btn btn-primary" @onclick="Crear" disabled="@saving">
+                @(saving ? "Creando..." : "Crear y continuar con partidos →")
+            </button>
+        </div>
+    }
+
+    @if (VerificandoSesion)
+    {
+        <p>Verificando sesión...</p>
+    }
+    else if (loading)
+    {
+        <p>Cargando...</p>
+    }
+    else
+    {
+        <table class="table" style="margin-top:1.5rem;">
+            <thead>
+                <tr>
+                    <th>Evento</th>
+                    <th>Inicio</th>
+                    <th>Fin</th>
+                    <th>Progreso</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var ev in eventos)
+                {
+                    var partidos = partidosPorEvento.GetValueOrDefault(ev.Id);
+                    var plantillas = plantillasPorEvento.GetValueOrDefault(ev.Id);
+
+                    <tr>
+                        <td><strong>@ev.Nombre</strong></td>
+                        <td>@UruguayTimeHelper.Formatear(ev.FechaInicio)</td>
+                        <td>@UruguayTimeHelper.Formatear(ev.FechaFin)</td>
+                        <td>
+                            <span class="@CompetenciaFlujoEstado.ClaseBadgePartidos(partidos)">
+                                @CompetenciaFlujoEstado.EtiquetaPartidos(partidos)
+                            </span>
+                            <span class="@CompetenciaFlujoEstado.ClaseBadgePlantillas(plantillas)" style="margin-left:.35rem;">
+                                @CompetenciaFlujoEstado.EtiquetaPlantillas(plantillas)
+                            </span>
+                        </td>
+                        <td>
+                            <div class="workflow-actions">
+                                <a href="/eventos/@ev.Id/resultados" class="btn btn-primary">Partidos</a>
+                                <a href="/plantillas?eventoId=@ev.Id" class="btn btn-outline btn-sm">Plantilla</a>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        @if (eventos.Count == 0)
+        {
+            <p class="empty">Todavía no hay competencias. Creá el primer evento con el botón de arriba.</p>
+        }
+    }
+</div>
 
 @code {
+    [SupplyParameterFromQuery(Name = "nuevo")]
+    public bool AbrirFormulario { get; set; }
+
     private List<EventoResponseDto> eventos = new();
     private List<CatalogoSimpleDto> deportes = new();
     private List<CatalogoSimpleDto> tiposComp = new();
+    private Dictionary<Guid, int> partidosPorEvento = new();
+    private Dictionary<Guid, int> plantillasPorEvento = new();
 
     private bool loading = true;
     private bool saving = false;
@@ -134,23 +171,74 @@ else
     private string nuevoDeporte = "";
     private string nuevoTipo = "";
 
-    private TimeOnly horaInicio = TimeOnly.FromDateTime(DateTime.UtcNow.AddHours(-3));
-    private TimeOnly horaFin = TimeOnly.FromDateTime(DateTime.UtcNow.AddHours(-3));
+    private TimeOnly horaInicio = TimeOnly.FromDateTime(UruguayTimeHelper.NowInUruguay());
+    private TimeOnly horaFin = TimeOnly.FromDateTime(UruguayTimeHelper.NowInUruguay());
+
+    private string fechaInicioStr = UruguayTimeHelper.HoyComoInputDate();
+    private string fechaFinStr = UruguayTimeHelper.HoyComoInputDate();
 
     private EventoRequestDto form = new();
 
     protected override async Task OnSesionValidaAsync()
     {
+        ReiniciarFormulario();
+
+        if (AbrirFormulario)
+            mostrarForm = true;
+
         await Cargar();
     }
+
+    private void ToggleFormulario()
+    {
+        mostrarForm = !mostrarForm;
+        if (mostrarForm)
+            ReiniciarFormulario();
+    }
+
+    private void ReiniciarFormulario()
+    {
+        form = new EventoRequestDto();
+        fechaInicioStr = UruguayTimeHelper.HoyComoInputDate();
+        fechaFinStr = UruguayTimeHelper.HoyComoInputDate();
+        horaInicio = TimeOnly.FromDateTime(UruguayTimeHelper.NowInUruguay());
+        horaFin = TimeOnly.FromDateTime(UruguayTimeHelper.NowInUruguay());
+        formError = null;
+        nuevoDeporte = "";
+        nuevoTipo = "";
+    }
+
+    private void OnFechaInicioChanged(ChangeEventArgs e) =>
+        fechaInicioStr = e.Value?.ToString() ?? fechaInicioStr;
+
+    private void OnFechaFinChanged(ChangeEventArgs e) =>
+        fechaFinStr = e.Value?.ToString() ?? fechaFinStr;
 
     private async Task Cargar()
     {
         EventosApiClient.SetToken(AdminToken!);
+        PlantillasApiClient.SetToken(AdminToken!);
 
         eventos = await EventosApiClient.ObtenerTodosAsync();
         deportes = await EventosApiClient.ObtenerDeportesAsync();
         tiposComp = await EventosApiClient.ObtenerTiposCompetenciaAsync();
+
+        var plantillas = await PlantillasApiClient.ObtenerTodosAsync();
+        plantillasPorEvento = plantillas
+            .GroupBy(p => p.EventoDeportivoId)
+            .ToDictionary(g => g.Key, g => g.Count());
+
+        partidosPorEvento = new Dictionary<Guid, int>();
+        if (eventos.Count > 0)
+        {
+            var detalles = await Task.WhenAll(
+                eventos.Select(e => EventosApiClient.ObtenerDetalleAsync(e.Id)));
+
+            for (var i = 0; i < eventos.Count; i++)
+            {
+                partidosPorEvento[eventos[i].Id] = detalles[i]?.Partidos?.Count ?? 0;
+            }
+        }
 
         loading = false;
     }
@@ -162,17 +250,36 @@ else
 
         try
         {
-            form.FechaInicio = form.FechaInicio.Date.Add(horaInicio.ToTimeSpan());
-            form.FechaFin = form.FechaFin.Date.Add(horaFin.ToTimeSpan());
+            if (string.IsNullOrWhiteSpace(form.Nombre))
+            {
+                formError = "Ingresá un nombre para el evento.";
+                return;
+            }
+
+            if (form.DeporteId == Guid.Empty || form.TipoCompetenciaId == Guid.Empty)
+            {
+                formError = "Seleccioná deporte y tipo de competencia.";
+                return;
+            }
+
+            if (!DateTime.TryParse(fechaInicioStr, out var fechaInicio) ||
+                !DateTime.TryParse(fechaFinStr, out var fechaFin))
+            {
+                formError = "Ingresá fechas válidas.";
+                return;
+            }
+
+            form.FechaInicio = fechaInicio.Date.Add(horaInicio.ToTimeSpan());
+            form.FechaFin = fechaFin.Date.Add(horaFin.ToTimeSpan());
+
+            if (form.FechaFin < form.FechaInicio)
+            {
+                formError = "La fecha de fin no puede ser anterior al inicio.";
+                return;
+            }
 
             var nuevo = await EventosApiClient.CrearAsync(form);
-
-            eventos.Add(nuevo);
-
-            form = new();
-            horaInicio = TimeOnly.FromDateTime(DateTime.UtcNow.AddHours(-3));
-            horaFin = TimeOnly.FromDateTime(DateTime.UtcNow.AddHours(-3));
-            mostrarForm = false;
+            Navigation.NavigateTo($"/eventos/{nuevo.Id}/resultados?nuevo=1");
         }
         catch (Exception ex)
         {
@@ -190,7 +297,6 @@ else
             return;
 
         var deporte = await EventosApiClient.CrearDeporteAsync(nuevoDeporte.Trim());
-
         deportes.Add(deporte);
         form.DeporteId = deporte.Id;
         nuevoDeporte = "";
@@ -202,7 +308,6 @@ else
             return;
 
         var tipo = await EventosApiClient.CrearTipoCompetenciaAsync(nuevoTipo.Trim());
-
         tiposComp.Add(tipo);
         form.TipoCompetenciaId = tipo.Id;
         nuevoTipo = "";

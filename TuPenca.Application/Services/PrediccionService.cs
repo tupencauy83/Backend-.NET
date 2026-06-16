@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
+﻿using TuPenca.Application.Common;
 using TuPenca.Application.DTOs.Prediccion;
 using TuPenca.Application.Interfaces.Services;
 using TuPenca.Domain.Entities;
@@ -52,7 +49,8 @@ namespace TuPenca.Application.Services
                 throw new Exception(mensaje);
             }
 
-            var tiempoLimite = partido.Fecha.AddMinutes(-penca.Plantilla.TiempoLimitePrevioMinutos);
+            var partidoUtc = UruguayTimeHelper.AsUtc(partido.Fecha);
+            var tiempoLimite = partidoUtc.AddMinutes(-penca.Plantilla.TiempoLimitePrevioMinutos);
             if (DateTime.UtcNow >= tiempoLimite)
                 throw new Exception("El tiempo límite para predecir este partido ya cerró");
 
@@ -104,7 +102,7 @@ namespace TuPenca.Application.Services
                 GolesLocal = dto.GolesLocal,
                 GolesVisitante = dto.GolesVisitante,
                 EquipoGanadorPredichoId = dto.EquipoGanadorPredichoId,
-                FechaPartido = partido.Fecha
+                FechaPartido = UruguayTimeHelper.AsUtc(partido.Fecha)
             };
         }
 
@@ -131,7 +129,7 @@ namespace TuPenca.Application.Services
                     GolesLocal = pred.GolesLocal,
                     GolesVisitante = pred.GolesVisitante,
                     EquipoGanadorPredichoId = pred.EquipoGanadorPredichoId,
-                    FechaPartido = partido.Fecha
+                    FechaPartido = UruguayTimeHelper.AsUtc(partido.Fecha)
                 });
             }
 
@@ -190,7 +188,7 @@ namespace TuPenca.Application.Services
                     GolesVisitante = prediccion?.GolesVisitante ?? 0,
                     EquipoGanadorPredichoId = prediccion?.EquipoGanadorPredichoId,
 
-                    FechaPartido = partido.Fecha
+                    FechaPartido = UruguayTimeHelper.AsUtc(partido.Fecha)
                 });
             }
 
@@ -236,7 +234,7 @@ namespace TuPenca.Application.Services
                 partidosHistorial.Add(new HistorialPartidoDto
                 {
                     PartidoId = partido.Id,
-                    FechaPartido = partido.Fecha,
+                    FechaPartido = UruguayTimeHelper.AsUtc(partido.Fecha),
                     Fase = partido.Fase,
                     EquipoLocal = partido.EquipoLocal,
                     EquipoVisitante = partido.EquipoVisitante,

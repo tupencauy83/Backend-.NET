@@ -1,7 +1,5 @@
 ﻿using FirebaseAdmin.Messaging;
-using System;
-using System.Collections.Generic;
-using System.Text;
+using TuPenca.Application.Common;
 using TuPenca.Application.DTOs.EventoDeportivo;
 using TuPenca.Application.DTOs.Partido;
 using TuPenca.Application.Interfaces.Services;
@@ -30,13 +28,7 @@ namespace TuPenca.Application.Services
         public async Task<IEnumerable<EventoDeportivoResponseDto>> ObtenerTodosAsync()
         {
             var eventos = await _unitOfWork.EventosDeportivos.GetAllAsync();
-            return eventos.Select(e => new EventoDeportivoResponseDto
-            {
-                Id = e.Id,
-                Nombre = e.Nombre,
-                FechaInicio = e.FechaInicio,
-                FechaFin = e.FechaFin
-            });
+            return eventos.Select(MapEvento);
         }
 
         public async Task<EventoDeportivoResponseDto?> ObtenerPorIdAsync(Guid id)
@@ -44,7 +36,6 @@ namespace TuPenca.Application.Services
             var evento = await _unitOfWork.EventosDeportivos.GetByIdAsync(id);
             if (evento == null) return null;
 
-            // Cargar partidos del evento
             var todosPartidos = await _unitOfWork.Partidos.GetAllAsync();
             var partidosEvento = todosPartidos.Where(p => p.EventoDeportivoId == id).ToList();
 
@@ -53,28 +44,12 @@ namespace TuPenca.Application.Services
             {
                 var eqLocal = await _unitOfWork.Equipos.GetByIdAsync(p.EquipoLocalId);
                 var eqVisitante = await _unitOfWork.Equipos.GetByIdAsync(p.EquipoVisitanteId);
-                partidosDto.Add(new PartidoResponseDto
-                {
-                    Id = p.Id,
-                    Fecha = p.Fecha,
-                    Fase = p.Fase,
-                    EquipoLocalId = p.EquipoLocalId,
-                    EquipoLocal = eqLocal?.Nombre ?? string.Empty,
-                    EquipoVisitanteId = p.EquipoVisitanteId,
-                    EquipoVisitante = eqVisitante?.Nombre ?? string.Empty,
-                    ResultadoLocal = p.ResultadoLocal,
-                    ResultadoVisitante = p.ResultadoVisitante
-                });
+                partidosDto.Add(MapPartido(p, eqLocal?.Nombre ?? string.Empty, eqVisitante?.Nombre ?? string.Empty));
             }
 
-            return new EventoDeportivoResponseDto
-            {
-                Id = evento.Id,
-                Nombre = evento.Nombre,
-                FechaInicio = evento.FechaInicio,
-                FechaFin = evento.FechaFin,
-                Partidos = partidosDto
-            };
+            var dto = MapEvento(evento);
+            dto.Partidos = partidosDto;
+            return dto;
         }
 
         public async Task<EventoDeportivoResponseDto> CrearAsync(EventoDeportivoRequestDto dto)
@@ -83,8 +58,8 @@ namespace TuPenca.Application.Services
             {
                 Id = Guid.NewGuid(),
                 Nombre = dto.Nombre,
-                FechaInicio = dto.FechaInicio,
-                FechaFin = dto.FechaFin,
+                FechaInicio = UruguayTimeHelper.FromUruguayLocalToUtc(dto.FechaInicio),
+                FechaFin = UruguayTimeHelper.FromUruguayLocalToUtc(dto.FechaFin),
                 DeporteId = dto.DeporteId,
                 TipoCompetenciaId = dto.TipoCompetenciaId
             };
@@ -92,13 +67,7 @@ namespace TuPenca.Application.Services
             await _unitOfWork.EventosDeportivos.AddAsync(evento);
             await _unitOfWork.SaveChangesAsync();
 
-            return new EventoDeportivoResponseDto
-            {
-                Id = evento.Id,
-                Nombre = evento.Nombre,
-                FechaInicio = evento.FechaInicio,
-                FechaFin = evento.FechaFin
-            };
+            return MapEvento(evento);
         }
 
         public async Task<PartidoResponseDto> AgregarPartidoAsync(PartidoRequestDto dto)
@@ -119,7 +88,7 @@ namespace TuPenca.Application.Services
             var partido = new Partido
             {
                 Id = Guid.NewGuid(),
-                Fecha = dto.Fecha,
+                Fecha = UruguayTimeHelper.FromUruguayLocalToUtc(dto.Fecha),
                 Fase = dto.Fase,
                 EquipoLocalId = dto.EquipoLocalId,
                 EquipoVisitanteId = dto.EquipoVisitanteId,
@@ -130,17 +99,29 @@ namespace TuPenca.Application.Services
             await _unitOfWork.Partidos.AddAsync(partido);
             await _unitOfWork.SaveChangesAsync();
 
-            return new PartidoResponseDto
-            {
-                Id = partido.Id,
-                Fecha = partido.Fecha,
-                Fase = partido.Fase,
-                EquipoLocalId = partido.EquipoLocalId,
-                EquipoLocal = equipoLocal.Nombre,
-                EquipoVisitanteId = partido.EquipoVisitanteId,
-                EquipoVisitante = equipoVisitante.Nombre
-            };
+            return MapPartido(partido, equipoLocal.Nombre, equipoVisitante.Nombre);
         }
+
+        private static EventoDeportivoResponseDto MapEvento(EventoDeportivo evento) => new()
+        {
+            Id = evento.Id,
+            Nombre = evento.Nombre,
+            FechaInicio = UruguayTimeHelper.AsUtc(evento.FechaInicio),
+            FechaFin = UruguayTimeHelper.AsUtc(evento.FechaFin)
+        };
+
+        private static PartidoResponseDto MapPartido(Partido partido, string equipoLocal, string equipoVisitante) => new()
+        {
+            Id = partido.Id,
+            Fecha = UruguayTimeHelper.AsUtc(partido.Fecha),
+            Fase = partido.Fase,
+            EquipoLocalId = partido.EquipoLocalId,
+            EquipoLocal = equipoLocal,
+            EquipoVisitanteId = partido.EquipoVisitanteId,
+            EquipoVisitante = equipoVisitante,
+            ResultadoLocal = partido.ResultadoLocal,
+            ResultadoVisitante = partido.ResultadoVisitante
+        };
 
 
         public async Task<ResultadoResponseDto> CargarResultadoAsync(ResultadoRequestDto dto)

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using TuPenca.Application.Common;
 using TuPenca.Application.DTOs.Penca;
 using TuPenca.Application.Interfaces.Services;
 using TuPenca.Domain.Entities;
@@ -63,7 +64,7 @@ namespace TuPenca.Application.Services
             if (plantilla.Evento == null)
                 throw new Exception("La plantilla no tiene un evento deportivo asociado");
 
-            if (DateTime.UtcNow >= plantilla.Evento.FechaInicio)
+            if (DateTime.UtcNow >= UruguayTimeHelper.AsUtc(plantilla.Evento.FechaInicio))
                 throw new Exception("No se puede crear la penca: la competición ya comenzó. Solo se permiten instancias previas al inicio del evento.");
 
             // Validación individual

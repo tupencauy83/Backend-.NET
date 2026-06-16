@@ -6,7 +6,30 @@
 @inherits AdminProtectedPage
 @rendermode InteractiveServer
 
-<h1>Plantillas de Penca</h1>
+<div class="workflow-page">
+    <p class="workflow-breadcrumb">
+        <a href="/eventos">Competencias</a>
+        @if (eventoSeleccionado != null)
+        {
+            <text> · <a href="/eventos/@eventoSeleccionado.Id/resultados">@eventoSeleccionado.Nombre</a></text>
+        }
+        · Paso 3 de 3
+    </p>
+
+    <h1>Plantillas de penca</h1>
+    <p class="workflow-page__intro">
+        La plantilla define las reglas de puntaje, el monto de entrada y la comisión.
+        Los administradores de sitio la usan para instanciar pencas sobre este evento.
+    </p>
+
+    <CompetenciaFlujoStepper PasoActual="3"
+                             EventoId="eventoSeleccionado?.Id"
+                             EventoNombre="@eventoSeleccionado?.Nombre" />
+
+    @if (mensajeExito != null)
+    {
+        <div class="workflow-banner">@((MarkupString)mensajeExito)</div>
+    }
 
 @if (VerificandoSesion)
 {
@@ -14,27 +37,30 @@
 }
 else
 {
-    <button class="btn btn-primary" @onclick="() => mostrarForm = !mostrarForm">
+    <button class="btn btn-primary" @onclick="ToggleFormulario">
         @(mostrarForm ? "Cancelar" : "+ Nueva plantilla")
     </button>
 
     @if (mostrarForm)
     {
         <div class="form-card">
+            <h2 class="stats-section-title">Paso 3 · Configurar plantilla</h2>
+
             <div class="form-group">
                 <label>Nombre</label>
-                <input @bind="form.Nombre" required />
+                <input @bind="form.Nombre" placeholder="Ej: Mundial 2026 - estándar" required />
             </div>
 
             <div class="form-group">
                 <label>Descripción</label>
-                <textarea @bind="form.Descripcion" rows="2" required></textarea>
+                <textarea @bind="form.Descripcion" rows="2" placeholder="Breve descripción para el admin de sitio" required></textarea>
             </div>
 
             <div class="form-row">
                 <div class="form-group">
-                    <label>Tiempo límite (minutos)</label>
+                    <label>Tiempo límite (minutos antes del partido)</label>
                     <input type="number" min="1" @bind="form.TiempoLimitePrevioMinutos" />
+                    <span class="form-hint">Hasta cuántos minutos antes se pueden cargar predicciones</span>
                 </div>
 
                 <div class="form-group">
@@ -64,12 +90,13 @@ else
             <div class="form-group">
                 <label>Puntos extra por acertar ganador</label>
                 <input type="number" min="0" @bind="form.PuntajeGanador" />
-                <span style="font-size:.75rem;color:var(--muted);">
-                    Puntos adicionales si el usuario acierta quién gana el partido
-                </span>
+                <span class="form-hint">Puntos adicionales si el usuario acierta quién gana el partido</span>
             </div>
 
             <label style="font-weight:600;margin-bottom:.5rem;display:block;">Reglas de puntuación</label>
+            <p class="form-hint" style="margin-bottom:.75rem;">
+                Desviación = diferencia total de goles respecto al resultado real. Ej: exacto = 0 desviación.
+            </p>
 
             @for (int i = 0; i < form.Reglas.Count; i++)
             {
@@ -119,7 +146,7 @@ else
     }
     else
     {
-        <table class="table">
+        <table class="table" style="margin-top:1.5rem;">
             <thead>
                 <tr>
                     <th>Nombre</th>
@@ -132,7 +159,7 @@ else
             </thead>
 
             <tbody>
-                @foreach (var pl in plantillas)
+                @foreach (var pl in plantillasFiltradas)
                 {
                     <tr>
                         <td>@pl.Nombre</td>
@@ -148,16 +175,34 @@ else
             </tbody>
         </table>
 
-        @if (plantillas.Count == 0)
+        @if (!plantillasFiltradas.Any())
         {
-            <p class="empty">No hay plantillas registradas.</p>
+            <p class="empty">
+                @if (EventoIdQuery.HasValue)
+                {
+                    <text>No hay plantillas para este evento todavía.</text>
+                }
+                else
+                {
+                    <text>No hay plantillas registradas.</text>
+                }
+            </p>
         }
     }
+
+    <div style="margin-top: 1rem;">
+        <a href="/eventos" style="color: var(--primary);">← Volver a competencias</a>
+    </div>
 }
+</div>
 
 @code {
+    [SupplyParameterFromQuery(Name = "eventoId")]
+    public Guid? EventoIdQuery { get; set; }
+
     private List<PlantillaResponseDto> plantillas = new();
     private List<CatalogoSimpleDto> eventos = new();
+    private CatalogoSimpleDto? eventoSeleccionado;
 
     private bool loading = true;
     private bool saving = false;
@@ -165,13 +210,28 @@ else
 
     private string? formError;
     private string? errorGeneral;
+    private string? mensajeExito;
 
     private PlantillaRequestDto form = CrearFormularioInicial();
+
+    private IEnumerable<PlantillaResponseDto> plantillasFiltradas =>
+        EventoIdQuery.HasValue
+            ? plantillas.Where(p => p.EventoDeportivoId == EventoIdQuery.Value)
+            : plantillas;
 
     protected override async Task OnSesionValidaAsync()
     {
         await Cargar();
+
+        if (EventoIdQuery.HasValue && EventoIdQuery.Value != Guid.Empty)
+        {
+            form.EventoDeportivoId = EventoIdQuery.Value;
+            eventoSeleccionado = eventos.FirstOrDefault(e => e.Id == EventoIdQuery.Value);
+            mostrarForm = true;
+        }
     }
+
+    private void ToggleFormulario() => mostrarForm = !mostrarForm;
 
     private async Task Cargar()
     {
@@ -209,10 +269,26 @@ else
                 return;
             }
 
+            if (!form.Reglas.Any())
+            {
+                formError = "Agregá al menos una regla de puntuación.";
+                return;
+            }
+
             var nueva = await PlantillasApiClient.CrearAsync(form);
 
             plantillas.Add(nueva);
+            eventoSeleccionado = eventos.FirstOrDefault(e => e.Id == nueva.EventoDeportivoId);
+
+            var nombreEvento = eventoSeleccionado?.Nombre ?? "el evento";
+            mensajeExito =
+                $"<strong>Plantilla creada.</strong> Los sitios ya pueden instanciar pencas de «{nombreEvento}». " +
+                $"<a href=\"/eventos\">Ver competencias</a>";
+
             form = CrearFormularioInicial();
+            if (EventoIdQuery.HasValue)
+                form.EventoDeportivoId = EventoIdQuery.Value;
+
             mostrarForm = false;
         }
         catch (Exception ex)
