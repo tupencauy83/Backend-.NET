@@ -58,6 +58,12 @@ namespace TuPenca.Application.Services
             if (plantilla == null)
                 throw new Exception("Plantilla no encontrada");
 
+            if (plantilla.Evento == null)
+                throw new Exception("La plantilla no tiene un evento deportivo asociado");
+
+            if (DateTime.UtcNow >= plantilla.Evento.FechaInicio)
+                throw new Exception("No se puede crear la penca: la competición ya comenzó. Solo se permiten instancias previas al inicio del evento.");
+
             // Validación individual
             if (dto.PorcentajePremio1 < 0 || dto.PorcentajePremio2 < 0 || dto.PorcentajePremio3 < 0)
                 throw new Exception("Los porcentajes de premios no pueden ser negativos");

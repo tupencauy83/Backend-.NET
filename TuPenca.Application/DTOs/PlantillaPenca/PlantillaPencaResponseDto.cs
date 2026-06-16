@@ -11,6 +11,7 @@ namespace TuPenca.Application.DTOs.PlantillaPenca
         public string Descripcion { get; set; } = null!;
         public int TiempoLimitePrevioMinutos { get; set; }
         public string EventoDeportivo { get; set; } = null!;
+        public DateTime? EventoFechaInicio { get; set; }
         public int MontoEntrada { get; set; }
         public int PorcentajeComision { get; set; }
         public int PuntajeGanador { get; set; }
