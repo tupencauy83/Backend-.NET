@@ -35,9 +35,14 @@ namespace TuPenca.Infrastructure.Services
                         var penca = await unitOfWork.Pencas.GetByIdAsync(pencaId); // ← una sola vez acá
 
                         var parametros = await unitOfWork.ParametrosSitio.GetBySitioIdAsync(penca.SitioId);
-                        if (parametros == null
-                            || !parametros.NotifResumenSemanal
-                            || DateTime.UtcNow.DayOfWeek != parametros.DiaResumenSemanal
+                        if (parametros == null || !parametros.NotifResumenSemanal)
+                            continue;
+
+                        var tz = TimeZoneInfo.FindSystemTimeZoneById("America/Montevideo");
+                        var ahoraUruguay = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, tz);
+
+                        // Día en horario de Uruguay; hora almacenada en UTC (la UI convierte UTC−3).
+                        if (ahoraUruguay.DayOfWeek != parametros.DiaResumenSemanal
                             || DateTime.UtcNow.Hour != parametros.HoraResumenSemanal)
                             continue;
 
