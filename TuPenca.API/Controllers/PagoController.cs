@@ -36,5 +36,18 @@ namespace TuPenca.API.Controllers
                 return BadRequest(ex.Message);
             }
         }
+
+        [HttpGet("mis-inscripciones")]
+        public async Task<IActionResult> ObtenerInscripciones()
+        {
+            var usuarioIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (usuarioIdClaim == null)
+                return Unauthorized();
+
+            var usuarioId = Guid.Parse(usuarioIdClaim);
+            var response = await _pagoService.ObtenerInscripcionesAsync(usuarioId);
+            return Ok(response);
+        }
+
     }
 }

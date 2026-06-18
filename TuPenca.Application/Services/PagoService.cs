@@ -136,5 +136,17 @@ namespace TuPenca.Application.Services
                 p.PencaId == pencaId &&
                 p.Estado == EstadoPago.Aprobado);
         }
+
+
+        public async Task<List<Guid>> ObtenerInscripcionesAsync(Guid usuarioId)
+        {
+            var pagos = await _unitOfWork.Pagos.GetAllAsync();
+            return pagos
+                .Where(p => p.UsuarioId == usuarioId && p.Estado == EstadoPago.Aprobado)
+                .Select(p => p.PencaId)
+                .Distinct()
+                .ToList();
+        }
+
     }
 }
