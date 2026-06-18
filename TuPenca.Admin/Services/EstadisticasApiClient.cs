@@ -19,9 +19,10 @@ public class EstadisticasApiClient
             new AuthenticationHeaderValue("Bearer", token);
     }
 
-    public async Task<EstadisticasGlobalesDto?> ObtenerGlobalesAsync()
+    public async Task<EstadisticasGlobalesDto?> ObtenerGlobalesAsync(EstadisticasGlobalesFiltroDto? filtro = null)
     {
-        var response = await _httpClient.GetAsync("api/estadisticas/global");
+        var url = "api/estadisticas/global" + ConstruirQuery(filtro);
+        var response = await _httpClient.GetAsync(url);
 
         if (!response.IsSuccessStatusCode)
         {
@@ -32,5 +33,27 @@ public class EstadisticasApiClient
         }
 
         return await response.Content.ReadFromJsonAsync<EstadisticasGlobalesDto>();
+    }
+
+    private static string ConstruirQuery(EstadisticasGlobalesFiltroDto? filtro)
+    {
+        if (filtro == null)
+            return string.Empty;
+
+        var parts = new List<string>();
+
+        if (filtro.FechaDesde.HasValue)
+            parts.Add($"fechaDesde={filtro.FechaDesde.Value:yyyy-MM-dd}");
+
+        if (filtro.FechaHasta.HasValue)
+            parts.Add($"fechaHasta={filtro.FechaHasta.Value:yyyy-MM-dd}");
+
+        if (filtro.EstadoSitio.HasValue)
+            parts.Add($"estadoSitio={(int)filtro.EstadoSitio.Value}");
+
+        if (!string.IsNullOrWhiteSpace(filtro.Buscar))
+            parts.Add($"buscar={Uri.EscapeDataString(filtro.Buscar.Trim())}");
+
+        return parts.Count == 0 ? string.Empty : "?" + string.Join("&", parts);
     }
 }

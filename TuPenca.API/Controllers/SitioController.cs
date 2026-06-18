@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 using TuPenca.Application.DTOs.Sitio;
 using TuPenca.Application.Interfaces.Services;
@@ -79,6 +80,9 @@ namespace TuPenca.API.Controllers
             if (sitio == null)
                 return NotFound();
 
+            if (sitio.Estado != Domain.Enums.EstadoSitio.Activo)
+                return StatusCode(StatusCodes.Status403Forbidden, "Este sitio fue desactivado o no está disponible.");
+
             var result = new
             {
                 sitio.ColorPrimario,
@@ -114,10 +118,35 @@ namespace TuPenca.API.Controllers
                 var response = await _sitioService.SolicitarSitioAsync(solicitarSitioDto);
                 return Ok(response);
             }
+            catch (DbUpdateException ex)
+            {
+                return BadRequest(new { mensaje = TraducirErrorDuplicado(ex) });
+            }
             catch (Exception ex)
             {
-                return BadRequest(ex.Message);
+                return BadRequest(new { mensaje = ex.Message });
             }
+        }
+
+        private static string TraducirErrorDuplicado(DbUpdateException ex)
+        {
+            var detalle = ex.InnerException?.Message ?? ex.Message;
+
+            if (detalle.Contains("Email", StringComparison.OrdinalIgnoreCase) ||
+                detalle.Contains("duplicate", StringComparison.OrdinalIgnoreCase) ||
+                detalle.Contains("UNIQUE", StringComparison.OrdinalIgnoreCase) ||
+                detalle.Contains("IX_Usuarios", StringComparison.OrdinalIgnoreCase))
+            {
+                return "Ese email ya está en uso en este sitio.";
+            }
+
+            if (detalle.Contains("UrlPropia", StringComparison.OrdinalIgnoreCase) ||
+                detalle.Contains("IX_Sitios", StringComparison.OrdinalIgnoreCase))
+            {
+                return "Esa dirección ya está en uso. Elegí otro nombre.";
+            }
+
+            return detalle;
         }
 
         [HttpPost("actualizar/estado")]

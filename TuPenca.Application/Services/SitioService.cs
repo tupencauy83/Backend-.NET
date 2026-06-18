@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
+using TuPenca.Application.Common;
 using TuPenca.Application.DTOs.Sitio;
 using TuPenca.Application.Interfaces.Services;
 using TuPenca.Domain.Entities;
@@ -57,6 +58,7 @@ namespace TuPenca.Application.Services
                 ColorPrimario = sitio.ColorPrimario,
                 ColorSecundario = sitio.ColorSecundario,
                 TipoRegistro = sitio.TipoRegistro,
+                Estado = sitio.Estado,
                 Logo = sitio.Logo
             };
         }
@@ -84,14 +86,20 @@ namespace TuPenca.Application.Services
 
         public async Task<SitioResponseDto> SolicitarSitioAsync(SitioPendienteRequestDto sitioDto)
         {
-            var url = NormalizarHost(sitioDto.UrlPropia);
-            if (string.IsNullOrWhiteSpace(url))
-                throw new Exception("El dominio del sitio es obligatorio");
+            var url = SitioUrlHelper.ConstruirUrlPropia(sitioDto.UrlPropia);
 
             // UrlPropia es único. Chequeamos antes para devolver un mensaje claro.
             var existentes = await _unitOfWork.Sitios.GetAllAsync();
-            if (existentes.Any(s => string.Equals(NormalizarHost(s.UrlPropia), url, StringComparison.OrdinalIgnoreCase)))
-                throw new Exception("Ese dominio ya está en uso. Elegí otro.");
+            if (existentes.Any(s => string.Equals(SitioUrlHelper.NormalizarHost(s.UrlPropia), url, StringComparison.OrdinalIgnoreCase)))
+                throw new Exception("Esa dirección ya está en uso. Elegí otro nombre.");
+
+            var email = sitioDto.Email.Trim();
+            if (string.IsNullOrWhiteSpace(email))
+                throw new Exception("El email de contacto es obligatorio.");
+
+            var adminPlataforma = await _unitOfWork.Administrador.GetByEmailAsync(email);
+            if (adminPlataforma is not null)
+                throw new Exception("Ese email pertenece a un administrador de plataforma. Usá otro correo.");
 
             var sitio = new Sitio()
             {
@@ -111,7 +119,7 @@ namespace TuPenca.Application.Services
             {
                 Id = Guid.NewGuid(),
                 Nombre = sitioDto.NombreUsuario,
-                Email = sitioDto.Email,
+                Email = email,
                 PasswordHash = "",
                 Rol = RolUsuario.AdministradorSitio,
                 FechaRegistro = DateTime.UtcNow,
@@ -139,24 +147,6 @@ namespace TuPenca.Application.Services
                 Nombre = sitio.Nombre,
                 Mensaje = "Solicitud de sitio creada exitosamente."
             };
-        }
-
-        private static string NormalizarHost(string? host)
-        {
-            if (string.IsNullOrWhiteSpace(host))
-                return string.Empty;
-
-            var valor = host.Trim().ToLowerInvariant();
-
-            if (Uri.TryCreate(valor, UriKind.Absolute, out var uri))
-                valor = uri.Host;
-            else if (Uri.TryCreate($"https://{valor}", UriKind.Absolute, out var uriConEsquema))
-                valor = uriConEsquema.Host;
-
-            if (valor.StartsWith("www."))
-                valor = valor[4..];
-
-            return valor;
         }
 
         public async Task<SitioResponseDto> ActualizarSitioPendienteAsync(SitioActualizarEstadoRequest sitioDto)

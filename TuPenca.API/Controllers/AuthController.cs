@@ -23,14 +23,21 @@ public class AuthController : ControllerBase
         if (string.IsNullOrEmpty(request.Email) || string.IsNullOrEmpty(request.Password))
             return BadRequest("Email y contraseña son requeridos");
 
-        Guid? sitioId = _sitioProvider.GetSitioId();
+        try
+        {
+            Guid? sitioId = _sitioProvider.GetSitioId();
 
-        var response = await _authService.LoginAsync(request, sitioId);
+            var response = await _authService.LoginAsync(request, sitioId);
 
-        if (response == null)
-            return Unauthorized("Credenciales incorrectas");
+            if (response == null)
+                return Unauthorized("Credenciales incorrectas");
 
-        return Ok(response);
+            return Ok(response);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(ex.Message);
+        }
     }
 
     [HttpPost("firebase")]

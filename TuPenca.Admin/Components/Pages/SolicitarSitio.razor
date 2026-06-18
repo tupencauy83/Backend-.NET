@@ -3,6 +3,7 @@
 @using TuPenca.Admin.DTOs.Sitio
 @using TuPenca.Admin.Models.Enums
 @using TuPenca.Admin.Services
+@using TuPenca.Admin.Helpers
 @inject SitiosApiClient SitiosApiClient
 
 @rendermode InteractiveServer
@@ -47,11 +48,8 @@
                 </div>
 
                 <div class="public-form-group">
-                    <label>Dominio del sitio</label>
-                    <InputText class="public-form-control"
-                               placeholder="Ej: pencaclub.com"
-                               @bind-Value="Formulario.UrlPropia" />
-                    <small>Sin https://. Debe coincidir con la URL donde entrarán los usuarios.</small>
+                    <label>Dirección del sitio</label>
+                    <SubdominioSitioInput @bind-Value="Subdominio" />
                 </div>
 
                 <div class="public-form-row">
@@ -107,6 +105,8 @@
         TipoRegistro = TipoRegistro.Con_Autorizacion
     };
 
+    private string Subdominio = string.Empty;
+
     private bool Enviando;
     private bool LogoSeleccionado;
     private string? MensajeExito;
@@ -119,7 +119,16 @@
 
         try
         {
-            Formulario.UrlPropia = NormalizarDominio(Formulario.UrlPropia);
+            Subdominio = SitioUrlHelper.NormalizarSubdominio(Subdominio);
+
+            var url = SitioUrlHelper.ConstruirUrlPropia(Subdominio);
+            if (url is null)
+            {
+                MensajeError = "Ingresá un nombre válido: letras, números y guiones (sin puntos).";
+                return;
+            }
+
+            Formulario.UrlPropia = url;
 
             await SitiosApiClient.SolicitarAsync(Formulario);
 
@@ -127,12 +136,30 @@
         }
         catch (Exception ex)
         {
-            MensajeError = $"No se pudo enviar la solicitud: {ex.Message}";
+            MensajeError = MostrarMensajeError(ex.Message);
         }
         finally
         {
             Enviando = false;
         }
+    }
+
+    private static string MostrarMensajeError(string? mensaje)
+    {
+        var limpio = ApiResponseHelper.ExtraerMensaje(mensaje?.Trim() ?? string.Empty);
+
+        if (string.IsNullOrWhiteSpace(limpio))
+            return "No se pudo enviar la solicitud. Intentá de nuevo.";
+
+        if (limpio.Contains("email", StringComparison.OrdinalIgnoreCase) ||
+            limpio.Contains("correo", StringComparison.OrdinalIgnoreCase) ||
+            limpio.Contains("dirección", StringComparison.OrdinalIgnoreCase) ||
+            limpio.Contains("direccion", StringComparison.OrdinalIgnoreCase))
+        {
+            return limpio;
+        }
+
+        return $"No se pudo enviar la solicitud: {limpio}";
     }
 
     private async Task CargarLogo(InputFileChangeEventArgs e)
@@ -149,18 +176,5 @@
 
         Formulario.Logo = ms.ToArray();
         LogoSeleccionado = true;
-    }
-
-    private static string NormalizarDominio(string? dominio)
-    {
-        if (string.IsNullOrWhiteSpace(dominio))
-            return string.Empty;
-
-        return dominio
-            .Trim()
-            .Replace("https://", "")
-            .Replace("http://", "")
-            .TrimEnd('/')
-            .ToLower();
     }
 }

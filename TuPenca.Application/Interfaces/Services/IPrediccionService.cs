@@ -10,5 +10,6 @@ namespace TuPenca.Application.Interfaces.Services
     {
         Task<PrediccionResponseDto> CrearOModificarAsync(PrediccionRequestDto dto, Guid usuarioId);
         Task<IEnumerable<PrediccionResponseDto>> ObtenerMisPrediccionesAsync(Guid usuarioId, Guid pencaId);
+        Task<HistorialPencaResponseDto> ObtenerHistorialAsync(Guid usuarioId, Guid pencaId);
     }
 }

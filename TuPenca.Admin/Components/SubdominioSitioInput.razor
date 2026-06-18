@@ -1,0 +1,47 @@
+@using TuPenca.Admin.Helpers
+
+<div class="subdominio-input">
+    <InputText class="public-form-control subdominio-input__field"
+               @bind-Value="_textoVisual"
+               @bind-Value:after="OnTextoActualizado"
+               placeholder="@Placeholder" />
+    <span class="subdominio-input__suffix">.@SitioUrlHelper.DominioBase</span>
+</div>
+<small class="subdominio-ayuda">
+    @if (!string.IsNullOrWhiteSpace(_urlPreview))
+    {
+        <span>Tu sitio quedará en <strong>@_urlPreview</strong></span>
+    }
+    else
+    {
+        <span>Solo letras minúsculas, números y guiones (sin puntos).</span>
+    }
+</small>
+
+@code {
+    [Parameter] public string Value { get; set; } = string.Empty;
+    [Parameter] public EventCallback<string> ValueChanged { get; set; }
+    [Parameter] public string Placeholder { get; set; } = "miclub";
+
+    private string _textoVisual = string.Empty;
+    private string? _urlPreview;
+
+    protected override void OnParametersSet()
+    {
+        if (string.Equals(Value, _textoVisual, StringComparison.Ordinal))
+            return;
+
+        _textoVisual = Value;
+        _urlPreview = SitioUrlHelper.ConstruirUrlPropia(Value);
+    }
+
+    private async Task OnTextoActualizado()
+    {
+        var normalizado = SitioUrlHelper.NormalizarSubdominio(_textoVisual);
+        _textoVisual = normalizado;
+        _urlPreview = SitioUrlHelper.ConstruirUrlPropia(normalizado);
+
+        if (!string.Equals(Value, normalizado, StringComparison.Ordinal))
+            await ValueChanged.InvokeAsync(normalizado);
+    }
+}

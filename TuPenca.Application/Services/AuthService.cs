@@ -26,6 +26,10 @@ public class AuthService : IAuthService
         // ¿Viene con SitioId? → es Usuario del sitio (común o admin de sitio)
         if (sitioId != null)
         {
+            var sitio = await _unitOfWork.Sitios.GetByIdAsync(sitioId.Value);
+            if (sitio == null || sitio.Estado != EstadoSitio.Activo)
+                throw new Exception("Este sitio no está disponible");
+
             var usuario = await _unitOfWork.Usuarios
                 .GetByEmailAsync(request.Email, sitioId.Value);
 
@@ -114,6 +118,9 @@ public class AuthService : IAuthService
         var sitio = await _unitOfWork.Sitios.GetByIdAsync(sitioId.Value);
         if (sitio == null)
             throw new Exception("Sitio no encontrado");
+
+        if (sitio.Estado != EstadoSitio.Activo)
+            throw new Exception("Este sitio no está disponible");
 
         // Validar token con Firebase
         var decodedToken = await _firebaseService.VerifyTokenAsync(idToken);

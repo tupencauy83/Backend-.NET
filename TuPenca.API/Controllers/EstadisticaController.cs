@@ -18,11 +18,23 @@ namespace TuPenca.API.Controllers
 
         [HttpGet("global")]
         [Authorize(Roles = "AdministradorPlataforma")]
-        public async Task<IActionResult> ObtenerGlobales()
+        public async Task<IActionResult> ObtenerGlobales(
+            [FromQuery] DateTime? fechaDesde,
+            [FromQuery] DateTime? fechaHasta,
+            [FromQuery] Domain.Enums.EstadoSitio? estadoSitio,
+            [FromQuery] string? buscar)
         {
             try
             {
-                var response = await _estadisticasService.ObtenerGlobalesAsync();
+                var filtro = new Application.DTOs.Estadisticas.EstadisticasGlobalesFiltroDto
+                {
+                    FechaDesde = fechaDesde,
+                    FechaHasta = fechaHasta,
+                    EstadoSitio = estadoSitio,
+                    Buscar = buscar
+                };
+
+                var response = await _estadisticasService.ObtenerGlobalesAsync(filtro);
                 return Ok(response);
             }
             catch (Exception ex)

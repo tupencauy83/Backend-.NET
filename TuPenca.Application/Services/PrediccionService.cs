@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
+﻿using TuPenca.Application.Common;
 using TuPenca.Application.DTOs.Prediccion;
 using TuPenca.Application.Interfaces.Services;
 using TuPenca.Domain.Entities;
@@ -52,7 +49,8 @@ namespace TuPenca.Application.Services
                 throw new Exception(mensaje);
             }
 
-            var tiempoLimite = partido.Fecha.AddMinutes(-penca.Plantilla.TiempoLimitePrevioMinutos);
+            var partidoUtc = UruguayTimeHelper.AsUtc(partido.Fecha);
+            var tiempoLimite = partidoUtc.AddMinutes(-penca.Plantilla.TiempoLimitePrevioMinutos);
             if (DateTime.UtcNow >= tiempoLimite)
                 throw new Exception("El tiempo límite para predecir este partido ya cerró");
 
@@ -104,7 +102,7 @@ namespace TuPenca.Application.Services
                 GolesLocal = dto.GolesLocal,
                 GolesVisitante = dto.GolesVisitante,
                 EquipoGanadorPredichoId = dto.EquipoGanadorPredichoId,
-                FechaPartido = partido.Fecha
+                FechaPartido = UruguayTimeHelper.AsUtc(partido.Fecha)
             };
         }
 
@@ -131,7 +129,7 @@ namespace TuPenca.Application.Services
                     GolesLocal = pred.GolesLocal,
                     GolesVisitante = pred.GolesVisitante,
                     EquipoGanadorPredichoId = pred.EquipoGanadorPredichoId,
-                    FechaPartido = partido.Fecha
+                    FechaPartido = UruguayTimeHelper.AsUtc(partido.Fecha)
                 });
             }
 
@@ -190,13 +188,75 @@ namespace TuPenca.Application.Services
                     GolesVisitante = prediccion?.GolesVisitante ?? 0,
                     EquipoGanadorPredichoId = prediccion?.EquipoGanadorPredichoId,
 
-                    FechaPartido = partido.Fecha
+                    FechaPartido = UruguayTimeHelper.AsUtc(partido.Fecha)
                 });
             }
 
             return resultado
                 .OrderBy(p => p.FechaPartido)
                 .ToList();
+        }
+
+        public async Task<HistorialPencaResponseDto> ObtenerHistorialAsync(Guid usuarioId, Guid pencaId)
+        {
+            var penca = await _unitOfWork.Pencas.GetByIdConDetalleAsync(pencaId);
+            if (penca == null)
+                throw new Exception("Penca no encontrada");
+
+            var plantilla = penca.Plantilla
+                ?? await _unitOfWork.PlantillasPenca.GetByIdAsync(penca.PlantillaPencaId);
+            if (plantilla == null)
+                throw new Exception("Plantilla no encontrada");
+
+            var evento = await _eventoDeportivoService.ObtenerPorIdAsync(plantilla.EventoDeportivoId);
+            if (evento == null)
+                throw new Exception("Evento deportivo no encontrado");
+
+            var todasPredicciones = await _unitOfWork.Predicciones.GetAllAsync();
+            var misPredicciones = todasPredicciones
+                .Where(p => p.UsuarioId == usuarioId && p.PencaId == pencaId)
+                .ToDictionary(p => p.PartidoId);
+
+            var puntajesPenca = await _unitOfWork.PuntajesUsuario.GetByPencaAsync(pencaId);
+            var misPuntajes = puntajesPenca
+                .Where(p => p.UsuarioId == usuarioId)
+                .ToDictionary(p => p.PartidoId, p => p.PuntosPartido);
+
+            var partidosHistorial = new List<HistorialPartidoDto>();
+
+            foreach (var partido in (evento.Partidos ?? []).OrderBy(p => p.Fecha))
+            {
+                misPredicciones.TryGetValue(partido.Id, out var prediccion);
+                misPuntajes.TryGetValue(partido.Id, out var puntosPartido);
+
+                var jugado = partido.ResultadoLocal.HasValue;
+
+                partidosHistorial.Add(new HistorialPartidoDto
+                {
+                    PartidoId = partido.Id,
+                    FechaPartido = UruguayTimeHelper.AsUtc(partido.Fecha),
+                    Fase = partido.Fase,
+                    EquipoLocal = partido.EquipoLocal,
+                    EquipoVisitante = partido.EquipoVisitante,
+                    Predijo = prediccion != null,
+                    PrediccionLocal = prediccion?.GolesLocal,
+                    PrediccionVisitante = prediccion?.GolesVisitante,
+                    ResultadoLocal = partido.ResultadoLocal,
+                    ResultadoVisitante = partido.ResultadoVisitante,
+                    PartidoJugado = jugado,
+                    PuntosObtenidos = prediccion != null && jugado ? puntosPartido : 0,
+                });
+            }
+
+            return new HistorialPencaResponseDto
+            {
+                PencaId = pencaId,
+                NombrePenca = penca.Nombre,
+                PuntosTotales = misPuntajes.Values.Sum(),
+                PartidosPredichos = misPredicciones.Count,
+                PartidosConResultado = partidosHistorial.Count(p => p.PartidoJugado),
+                Partidos = partidosHistorial,
+            };
         }
 
     }

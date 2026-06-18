@@ -6,6 +6,7 @@ using Microsoft.IdentityModel.Tokens;
 using Stripe;
 using System.Text;
 using TuPenca.API.Hubs;
+using TuPenca.API.Json;
 using TuPenca.Application.Interfaces.Services;
 using TuPenca.Application.Services;
 using TuPenca.Domain.Entities;
@@ -124,7 +125,12 @@ builder.Services.AddHostedService<ResumenSemanalBackgroundService>();
 builder.Services.AddSignalR(); // revisar la logica
 
 // ─── Controllers + Swagger ────────────────────────────────────
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new UtcDateTimeConverter());
+        options.JsonSerializerOptions.Converters.Add(new NullableUtcDateTimeConverter());
+    });
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -203,6 +209,7 @@ app.UseAuthentication();   // siempre antes de Authorization
 
 // ─── Middleware ───────────────────────────────────────────────
 app.UseMiddleware<SitioResolverMiddleware>();
+app.UseMiddleware<SitioActivoMiddleware>();
 
 app.UseAuthorization();
 

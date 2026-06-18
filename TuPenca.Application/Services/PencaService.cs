@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using TuPenca.Application.Common;
 using TuPenca.Application.DTOs.Penca;
 using TuPenca.Application.Interfaces.Services;
 using TuPenca.Domain.Entities;
@@ -31,7 +32,9 @@ namespace TuPenca.Application.Services
                 PlantillaNombre = p.Plantilla?.Nombre ?? string.Empty,
                 EventoDeportivo = p.Plantilla?.Evento?.Nombre ?? string.Empty,
                 EventoDeportivoId = p.Plantilla?.EventoDeportivoId,
-                MontoEntrada = p.Plantilla?.MontoEntrada ?? 0
+                MontoEntrada = p.Plantilla?.MontoEntrada ?? 0,
+                SitioNombre = p.Sitio?.Nombre ?? string.Empty,
+                SitioUrl = p.Sitio?.UrlPropia ?? string.Empty,
             });
         }
 
@@ -57,6 +60,12 @@ namespace TuPenca.Application.Services
             var plantilla = await _unitOfWork.PlantillasPenca.GetByIdConDetalleAsync(dto.PlantillaPencaId);
             if (plantilla == null)
                 throw new Exception("Plantilla no encontrada");
+
+            if (plantilla.Evento == null)
+                throw new Exception("La plantilla no tiene un evento deportivo asociado");
+
+            if (DateTime.UtcNow >= UruguayTimeHelper.AsUtc(plantilla.Evento.FechaInicio))
+                throw new Exception("No se puede crear la penca: la competición ya comenzó. Solo se permiten instancias previas al inicio del evento.");
 
             // Validación individual
             if (dto.PorcentajePremio1 < 0 || dto.PorcentajePremio2 < 0 || dto.PorcentajePremio3 < 0)

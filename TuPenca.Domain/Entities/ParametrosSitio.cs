@@ -16,7 +16,7 @@ namespace TuPenca.Domain.Entities
         // Resumen semanal
         public bool NotifResumenSemanal { get; set; } = true;
         public DayOfWeek DiaResumenSemanal { get; set; } = DayOfWeek.Friday;
-        public int HoraResumenSemanal { get; set; } = 9; // UTC, 0-23
+        public int HoraResumenSemanal { get; set; } = 9; // UTC en BD; la UI muestra UTC−3 (Uruguay)
 
         // Resultado de partido
         public bool NotifResultadoPartido { get; set; } = true;

@@ -1,4 +1,5 @@
 @page "/eventos/{EventoId:guid}/resultados"
+@using TuPenca.Admin.Helpers
 @using TuPenca.Admin.DTOs.Evento
 @using TuPenca.Admin.DTOs.Equipo
 @using TuPenca.Admin.DTOs.Partido
@@ -8,7 +9,38 @@
 @inherits AdminProtectedPage
 @rendermode InteractiveServer
 
-<h1>Partidos y resultados</h1>
+<div class="workflow-page">
+    @if (!VerificandoSesion && evento != null)
+    {
+        <p class="workflow-breadcrumb">
+            <a href="/eventos">Competencias</a> ·
+            <span>@evento.Nombre</span> · Paso 2 de 3
+        </p>
+    }
+    else
+    {
+        <p class="workflow-breadcrumb">
+            <a href="/eventos">Competencias</a> · Paso 2 de 3
+        </p>
+    }
+
+    <h1>Partidos y resultados</h1>
+
+    @if (evento != null)
+    {
+        <CompetenciaFlujoStepper PasoActual="2" EventoId="EventoId" EventoNombre="@evento.Nombre" />
+    }
+
+    @if (EsFlujoNuevo)
+    {
+        <div class="workflow-banner">
+            <strong>Evento creado.</strong> Ahora cargá los partidos del fixture.
+            @if (equipos.Count == 0)
+            {
+                <span> Primero necesitás equipos en la sección <a href="/equipos">Equipos</a>.</span>
+            }
+        </div>
+    }
 
 @if (VerificandoSesion)
 {
@@ -23,10 +55,20 @@ else
     @if (mostrarFormPartido)
     {
         <div class="form-card">
+            <h2 class="stats-section-title">Paso 2 · Agregar partido</h2>
+
+            @if (equipos.Count == 0)
+            {
+                <p class="error">
+                    No hay equipos cargados.
+                    <a href="/equipos">Creá equipos</a> antes de armar el fixture.
+                </p>
+            }
+
             <div class="form-group">
-                <label>Fecha y hora</label>
+                <label>Fecha y hora (Uruguay)</label>
                 <div style="display:flex;gap:.5rem;">
-                    <input type="date" @bind="nuevoPartido.Fecha" @bind:format="yyyy-MM-dd" style="flex:1;" />
+                    <input type="date" value="@fechaPartidoStr" @onchange="OnFechaPartidoChanged" style="flex:1;" />
                     <input type="time" @bind="horaPartido" style="width:120px;" />
                 </div>
             </div>
@@ -116,7 +158,7 @@ else
                         <tr>
                             <td>@partido.EquipoLocal vs @partido.EquipoVisitante</td>
                             <td>@partido.Fase</td>
-                            <td>@partido.Fecha.ToShortDateString()</td>
+                            <td>@UruguayTimeHelper.Formatear(partido.Fecha)</td>
                             <td>
                                 @if (yaJugado)
                                 {
@@ -201,13 +243,36 @@ else
         }
     }
 
-    <div style="margin-top: 2rem;">
-        <a href="/eventos" style="color: var(--primary);">← Volver a eventos</a>
+    @if (evento != null)
+    {
+        <div class="workflow-footer-cta">
+            <p>
+                @if ((evento.Partidos?.Count ?? 0) == 0)
+                {
+                    <text>Cuando tengas al menos un partido, podés definir la plantilla de penca.</text>
+                }
+                else
+                {
+                    <text>Siguiente paso: configurá reglas, monto y comisión en la plantilla.</text>
+                }
+            </p>
+            <a href="/plantillas?eventoId=@EventoId" class="btn btn-primary">
+                Continuar con plantilla →
+            </a>
+        </div>
+    }
+
+    <div style="margin-top: 1rem;">
+        <a href="/eventos" style="color: var(--primary);">← Volver a competencias</a>
     </div>
 }
+</div>
 
 @code {
     [Parameter] public Guid EventoId { get; set; }
+
+    [SupplyParameterFromQuery(Name = "nuevo")]
+    public bool EsFlujoNuevo { get; set; }
 
     private EventoResponseDto? evento;
     private List<EquipoResponseDto> equipos = new();
@@ -226,11 +291,15 @@ else
     private bool mostrarFormPartido = false;
     private bool savingPartido = false;
     private string? partidoError;
-    private TimeOnly horaPartido = TimeOnly.FromDateTime(DateTime.UtcNow.AddHours(-3));
+    private TimeOnly horaPartido = TimeOnly.FromDateTime(UruguayTimeHelper.NowInUruguay());
+    private string fechaPartidoStr = UruguayTimeHelper.HoyComoInputDate();
     private PartidoRequestDto nuevoPartido = new();
 
     protected override async Task OnSesionValidaAsync()
     {
+        if (EsFlujoNuevo)
+            mostrarFormPartido = true;
+
         await Cargar();
     }
 
@@ -239,6 +308,7 @@ else
         try
         {
             EventosApiClient.SetToken(AdminToken!);
+            EquiposApiClient.SetToken(AdminToken!);
 
             evento = await EventosApiClient.ObtenerDetalleAsync(EventoId);
 
@@ -251,6 +321,7 @@ else
             equipos = await EquiposApiClient.ObtenerTodosAsync();
 
             nuevoPartido.EventoDeportivoId = EventoId;
+            fechaPartidoStr = UruguayTimeHelper.HoyComoInputDate();
         }
         catch (Exception ex)
         {
@@ -261,6 +332,9 @@ else
             loading = false;
         }
     }
+
+    private void OnFechaPartidoChanged(ChangeEventArgs e) =>
+        fechaPartidoStr = e.Value?.ToString() ?? fechaPartidoStr;
 
     private async Task AgregarPartido()
     {
@@ -288,7 +362,14 @@ else
             }
 
             nuevoPartido.EventoDeportivoId = EventoId;
-            nuevoPartido.Fecha = nuevoPartido.Fecha.Date.Add(horaPartido.ToTimeSpan());
+
+            if (!DateTime.TryParse(fechaPartidoStr, out var fechaPartido))
+            {
+                partidoError = "Ingresá una fecha válida.";
+                return;
+            }
+
+            nuevoPartido.Fecha = fechaPartido.Date.Add(horaPartido.ToTimeSpan());
 
             var nuevo = await EventosApiClient.AgregarPartidoAsync(nuevoPartido);
 
@@ -300,7 +381,8 @@ else
                 EventoDeportivoId = EventoId
             };
 
-            horaPartido = TimeOnly.FromDateTime(DateTime.UtcNow.AddHours(-3));
+            fechaPartidoStr = UruguayTimeHelper.HoyComoInputDate();
+            horaPartido = TimeOnly.FromDateTime(UruguayTimeHelper.NowInUruguay());
             mostrarFormPartido = false;
         }
         catch (Exception ex)

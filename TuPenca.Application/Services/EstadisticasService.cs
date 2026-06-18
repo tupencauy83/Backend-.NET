@@ -14,70 +14,132 @@ namespace TuPenca.Application.Services
             _unitOfWork = unitOfWork;
         }
 
-        public async Task<EstadisticasGlobalesDto> ObtenerGlobalesAsync()
+        public async Task<EstadisticasGlobalesDto> ObtenerGlobalesAsync(EstadisticasGlobalesFiltroDto? filtro = null)
         {
-            var sitios = await _unitOfWork.Sitios.GetAllAsync();
-            var usuarios = await _unitOfWork.Usuarios.GetAllAsync();
-            var pencas = await _unitOfWork.Pencas.GetAllConDetalleAsync();
-            var pagos = await _unitOfWork.Pagos.GetAllAsync();
+            filtro ??= new EstadisticasGlobalesFiltroDto();
 
-            var pagosAprobados = pagos.Where(p => p.Estado == EstadoPago.Aprobado).ToList();
+            var sitios = (await _unitOfWork.Sitios.GetAllAsync()).ToList();
 
+            if (filtro.EstadoSitio.HasValue)
+                sitios = sitios.Where(s => s.Estado == filtro.EstadoSitio.Value).ToList();
+
+            if (!string.IsNullOrWhiteSpace(filtro.Buscar))
+            {
+                var termino = filtro.Buscar.Trim();
+                sitios = sitios.Where(s =>
+                    s.Nombre.Contains(termino, StringComparison.OrdinalIgnoreCase) ||
+                    s.UrlPropia.Contains(termino, StringComparison.OrdinalIgnoreCase)).ToList();
+            }
+
+            var sitioIds = sitios.Select(s => s.Id).ToHashSet();
+
+            var usuarios = (await _unitOfWork.Usuarios.GetAllAsync())
+                .Where(u => sitioIds.Contains(u.SitioId))
+                .ToList();
+
+            var pencas = (await _unitOfWork.Pencas.GetAllConDetalleAsync())
+                .Where(p => sitioIds.Contains(p.SitioId))
+                .ToList();
+
+            var pencaIds = pencas.Select(p => p.Id).ToHashSet();
+            var pencasPorId = pencas.ToDictionary(p => p.Id);
+
+            var pagos = (await _unitOfWork.Pagos.GetAllAsync())
+                .Where(p => p.Estado == EstadoPago.Aprobado && pencaIds.Contains(p.PencaId))
+                .ToList();
+
+            if (filtro.FechaDesde.HasValue)
+            {
+                var desde = filtro.FechaDesde.Value.Date;
+                pagos = pagos.Where(p => p.Fecha.Date >= desde).ToList();
+            }
+
+            if (filtro.FechaHasta.HasValue)
+            {
+                var hasta = filtro.FechaHasta.Value.Date;
+                pagos = pagos.Where(p => p.Fecha.Date <= hasta).ToList();
+            }
+
+            var detallePorSitio = new List<EstadisticaSitioDetalleDto>();
             var totalRecaudado = 0;
             var totalComisiones = 0;
 
-            foreach (var pago in pagosAprobados)
+            foreach (var sitio in sitios)
             {
-                var penca = pencas.FirstOrDefault(p => p.Id == pago.PencaId);
-                if (penca?.Plantilla == null) continue;
+                var usuariosSitio = usuarios.Where(u => u.SitioId == sitio.Id).ToList();
+                var pencasSitio = pencas.Where(p => p.SitioId == sitio.Id).ToList();
+                var pencaIdsSitio = pencasSitio.Select(p => p.Id).ToHashSet();
+                var pagosSitio = pagos.Where(p => pencaIdsSitio.Contains(p.PencaId)).ToList();
 
-                totalRecaudado += pago.Monto;
-                totalComisiones += pago.Monto * penca.Plantilla.PorcentajeComision / 100;
+                var recaudadoSitio = 0;
+                var comisionSitio = 0;
+
+                foreach (var pago in pagosSitio)
+                {
+                    if (!pencasPorId.TryGetValue(pago.PencaId, out var penca) || penca.Plantilla == null)
+                        continue;
+
+                    recaudadoSitio += pago.Monto;
+                    comisionSitio += pago.Monto * penca.Plantilla.PorcentajeComision / 100;
+                }
+
+                totalRecaudado += recaudadoSitio;
+                totalComisiones += comisionSitio;
+
+                detallePorSitio.Add(new EstadisticaSitioDetalleDto
+                {
+                    SitioId = sitio.Id,
+                    NombreSitio = sitio.Nombre,
+                    UrlPropia = sitio.UrlPropia,
+                    Estado = sitio.Estado,
+                    TotalUsuarios = usuariosSitio.Count,
+                    UsuariosPendientes = usuariosSitio.Count(u => u.Estado == EstadoUsuario.Pendiente),
+                    TotalPencasActivas = pencasSitio.Count(p => p.Estado == EstadoPenca.Abierta || p.Estado == EstadoPenca.EnCurso),
+                    TotalPencasFinalizadas = pencasSitio.Count(p => p.Estado == EstadoPenca.Finalizada),
+                    TotalInscripciones = pagosSitio.Count,
+                    TotalRecaudado = recaudadoSitio,
+                    TotalComisiones = comisionSitio
+                });
             }
 
-            var topPorUsuarios = usuarios
-                .GroupBy(u => u.SitioId)
-                .Select(g => new
-                {
-                    SitioId = g.Key,
-                    Total = g.Count()
-                })
-                .OrderByDescending(x => x.Total)
+            detallePorSitio = detallePorSitio
+                .OrderByDescending(d => d.TotalRecaudado)
+                .ThenByDescending(d => d.TotalUsuarios)
+                .ToList();
+
+            var topPorUsuarios = detallePorSitio
+                .OrderByDescending(d => d.TotalUsuarios)
                 .Take(5)
-                .Select(x => new EstadisticaSitioResumenDto
+                .Select(d => new EstadisticaSitioResumenDto
                 {
-                    NombreSitio = sitios.FirstOrDefault(s => s.Id == x.SitioId)?.Nombre ?? string.Empty,
-                    Valor = x.Total
+                    SitioId = d.SitioId,
+                    NombreSitio = d.NombreSitio,
+                    Valor = d.TotalUsuarios
                 })
                 .ToList();
 
-            var topPorRecaudacion = pagosAprobados
-                .Join(pencas, p => p.PencaId, penca => penca.Id, (p, penca) => new { p.Monto, penca.SitioId })
-                .GroupBy(x => x.SitioId)
-                .Select(g => new
-                {
-                    SitioId = g.Key,
-                    Total = g.Sum(x => x.Monto)
-                })
-                .OrderByDescending(x => x.Total)
+            var topPorRecaudacion = detallePorSitio
+                .OrderByDescending(d => d.TotalRecaudado)
                 .Take(5)
-                .Select(x => new EstadisticaSitioResumenDto
+                .Select(d => new EstadisticaSitioResumenDto
                 {
-                    NombreSitio = sitios.FirstOrDefault(s => s.Id == x.SitioId)?.Nombre ?? string.Empty,
-                    Valor = x.Total
+                    SitioId = d.SitioId,
+                    NombreSitio = d.NombreSitio,
+                    Valor = d.TotalRecaudado
                 })
                 .ToList();
 
             return new EstadisticasGlobalesDto
             {
-                TotalSitios = sitios.Count(),
-                TotalUsuarios = usuarios.Count(),
+                TotalSitios = sitios.Count,
+                TotalUsuarios = usuarios.Count,
                 TotalPencasActivas = pencas.Count(p => p.Estado == EstadoPenca.Abierta || p.Estado == EstadoPenca.EnCurso),
                 TotalPencasFinalizadas = pencas.Count(p => p.Estado == EstadoPenca.Finalizada),
                 TotalRecaudado = totalRecaudado,
                 TotalComisionesGeneradas = totalComisiones,
                 TopSitiosPorUsuarios = topPorUsuarios,
-                TopSitiosPorRecaudacion = topPorRecaudacion
+                TopSitiosPorRecaudacion = topPorRecaudacion,
+                EstadisticasPorSitio = detallePorSitio
             };
         }
 

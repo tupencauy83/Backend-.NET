@@ -1,4 +1,5 @@
-﻿using TuPenca.Application.DTOs.PlantillaPenca;
+﻿using TuPenca.Application.Common;
+using TuPenca.Application.DTOs.PlantillaPenca;
 using TuPenca.Application.Interfaces.Services;
 using TuPenca.Domain.Entities;
 using TuPenca.Domain.Interfaces;
@@ -24,6 +25,12 @@ namespace TuPenca.Application.Services
                 Descripcion = p.Descripcion,
                 TiempoLimitePrevioMinutos = p.TiempoLimitePrevioMinutos,
                 EventoDeportivo = p.Evento?.Nombre ?? string.Empty,
+                EventoDeportivoId = p.EventoDeportivoId,
+                EventoFechaInicio = p.Evento != null
+                    ? UruguayTimeHelper.AsUtc(p.Evento.FechaInicio)
+                    : null,
+                MontoEntrada = p.MontoEntrada,
+                PorcentajeComision = p.PorcentajeComision,
                 PuntajeGanador = p.PuntajeGanador,
                 Reglas = p.Reglas.Select(r => new ReglaPuntuacionDto
                 {
@@ -105,6 +112,7 @@ namespace TuPenca.Application.Services
                 Descripcion = plantilla.Descripcion,
                 TiempoLimitePrevioMinutos = plantilla.TiempoLimitePrevioMinutos,
                 EventoDeportivo = evento.Nombre,
+                EventoDeportivoId = evento.Id,
                 Reglas = dto.Reglas
             };
         }

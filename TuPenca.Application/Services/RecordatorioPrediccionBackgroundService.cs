@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using TuPenca.Application.Common;
 using TuPenca.Application.Interfaces.Services;
 using TuPenca.Domain.Interfaces;
 
@@ -26,7 +27,7 @@ namespace TuPenca.Infrastructure.Services
 
                     var todosPartidos = await unitOfWork.Partidos.GetAllAsync();
                     var partidosPendientes = todosPartidos
-                        .Where(p => p.ResultadoLocal == null && p.Fecha > DateTime.UtcNow)
+                        .Where(p => p.ResultadoLocal == null && UruguayTimeHelper.AsUtc(p.Fecha) > DateTime.UtcNow)
                         .ToList();
 
                     var pencas = await unitOfWork.Pencas.GetAllConDetalleAsync();
@@ -41,7 +42,8 @@ namespace TuPenca.Infrastructure.Services
 
                         foreach (var penca in pencasDelPartido)
                         {
-                            var deadline = partido.Fecha.AddMinutes(-penca.Plantilla.TiempoLimitePrevioMinutos);
+                            var partidoUtc = UruguayTimeHelper.AsUtc(partido.Fecha);
+                            var deadline = partidoUtc.AddMinutes(-penca.Plantilla.TiempoLimitePrevioMinutos);
                             var ahora = DateTime.UtcNow;
 
                             // Solo notificar si el deadline cae dentro del parametro fijado
