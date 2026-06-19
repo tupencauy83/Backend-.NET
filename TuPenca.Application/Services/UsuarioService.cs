@@ -111,6 +111,7 @@ namespace TuPenca.Application.Services
                 return new UsuarioResponseDto { Mensaje = "Las passwords deben ser iguales" };
 
             usuario.PasswordHash = HashPassword(usuarioDto.Password);
+            usuario.ProveedorAuth = ProveedorAuth.Local;
 
             await _unitOfWork.Usuarios.UpdateAsync(usuario);
             await _unitOfWork.SaveChangesAsync();

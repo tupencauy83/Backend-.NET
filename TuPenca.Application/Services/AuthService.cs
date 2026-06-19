@@ -53,9 +53,6 @@ public class AuthService : IAuthService
             if (usuario.Estado == EstadoUsuario.Rechazado)
                 throw new Exception("Tu cuenta fue rechazada");
 
-            if (usuario.ProveedorAuth != ProveedorAuth.Local)
-                throw new Exception("\"Debes iniciar sesión con Google");
-
             // El rol viene del campo Rol de la entidad
             var rolClaim = usuario.Rol == RolUsuario.AdministradorSitio
                 ? "AdministradorSitio"
