@@ -69,4 +69,56 @@ public static class SitioUrlHelper
 
         return valor;
     }
+
+    /// <summary>
+    /// Resuelve el origin del frontend para URLs de retorno post-Stripe.
+    /// Prioriza el origin enviado por el cliente si es válido; si no, usa https://{sitioUrlPropia}.
+    /// </summary>
+    public static string ResolverOriginFrontend(string? returnOrigin, string sitioUrlPropia)
+    {
+        var sitioHost = NormalizarHost(sitioUrlPropia);
+        var originNormalizado = NormalizarOrigin(returnOrigin);
+
+        if (originNormalizado != null && EsOriginPermitido(originNormalizado, sitioHost))
+            return originNormalizado;
+
+        return $"https://{sitioHost}";
+    }
+
+    public static string? NormalizarOrigin(string? origin)
+    {
+        if (string.IsNullOrWhiteSpace(origin))
+            return null;
+
+        if (!Uri.TryCreate(origin.Trim(), UriKind.Absolute, out var uri))
+            return null;
+
+        if (uri.Scheme != "https" && uri.Scheme != "http")
+            return null;
+
+        var host = NormalizarHost(uri.Host);
+        if (uri.Scheme == "http" && host is not ("localhost" or "127.0.0.1"))
+            return null;
+
+        var puerto = uri.IsDefaultPort ? string.Empty : $":{uri.Port}";
+        return $"{uri.Scheme}://{host}{puerto}";
+    }
+
+    public static bool EsOriginPermitido(string origin, string sitioHost)
+    {
+        if (!Uri.TryCreate(origin, UriKind.Absolute, out var uri))
+            return false;
+
+        var host = NormalizarHost(uri.Host);
+        if (host == sitioHost)
+            return true;
+
+        if (host is "localhost" or "127.0.0.1")
+            return true;
+
+        if (host.EndsWith(".vercel.app", StringComparison.Ordinal))
+            return true;
+
+        return false;
+    }
 }

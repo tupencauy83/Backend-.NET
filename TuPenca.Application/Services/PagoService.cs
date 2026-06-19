@@ -1,6 +1,6 @@
 ﻿using Stripe;
 using Stripe.Checkout;
-using Microsoft.Extensions.Configuration;
+using TuPenca.Application.Common;
 using TuPenca.Application.DTOs.Pago;
 using TuPenca.Application.Interfaces.Services;
 using TuPenca.Domain.Entities;
@@ -12,12 +12,10 @@ namespace TuPenca.Application.Services
     public class PagoService : IPagoService
     {
         private readonly IUnitOfWork _unitOfWork;
-        private readonly IConfiguration _config;
 
-        public PagoService(IUnitOfWork unitOfWork, IConfiguration config)
+        public PagoService(IUnitOfWork unitOfWork)
         {
             _unitOfWork = unitOfWork;
-            _config = config;
         }
 
         public async Task<PagoResponseDto> RealizarPagoAsync(PagoRequestDto dto, Guid usuarioId)
@@ -58,7 +56,13 @@ namespace TuPenca.Application.Services
             await _unitOfWork.Pagos.AddAsync(pago);
             await _unitOfWork.SaveChangesAsync();
 
-            var baseUrl = _config["App:BaseUrl"];
+            var sitio = await _unitOfWork.Sitios.GetByIdAsync(penca.SitioId);
+            if (sitio == null)
+                throw new Exception("Sitio de la penca no encontrado");
+
+            var frontendOrigin = SitioUrlHelper.ResolverOriginFrontend(dto.ReturnOrigin, sitio.UrlPropia);
+            var successUrl = $"{frontendOrigin.TrimEnd('/')}/pago/exito?pencaId={dto.PencaId}";
+            var cancelUrl = $"{frontendOrigin.TrimEnd('/')}/pago/error";
 
             // Crear Stripe Checkout Session
             var options = new SessionCreateOptions
@@ -81,8 +85,8 @@ namespace TuPenca.Application.Services
                     }
                 },
                 Mode = "payment",
-                SuccessUrl = "https://frontend-react-beta-green.vercel.app",
-                CancelUrl = $"{baseUrl}/pago/error",
+                SuccessUrl = successUrl,
+                CancelUrl = cancelUrl,
                 // Vinculamos el pago interno con la session de Stripe
                 Metadata = new Dictionary<string, string>
                 {
