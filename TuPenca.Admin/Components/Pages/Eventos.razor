@@ -275,7 +275,7 @@
             }
 
             var nuevo = await EventosApiClient.CrearAsync(form);
-            Navigation.NavigateTo($"/eventos/{nuevo.Id}/resultados?nuevo=1");
+            Navigation.NavigateTo($"/eventos/{nuevo.Id}/resultados?nuevo=true");
         }
         catch (Exception ex)
         {
