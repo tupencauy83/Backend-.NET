@@ -11,11 +11,7 @@
     Vista de consulta de todas las instancias creadas por los sitios.
 </p>
 
-@if (VerificandoSesion)
-{
-    <p>Verificando sesión...</p>
-}
-else if (loading)
+@if (VerificandoSesion || loading)
 {
     <p>Cargando...</p>
 }

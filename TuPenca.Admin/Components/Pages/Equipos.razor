@@ -7,28 +7,24 @@
 
 <h1>Gestión de Equipos</h1>
 
-<div class="form-inline">
-    <textarea @bind="nombresTexto" rows="3" placeholder="Un equipo por línea..."></textarea>
-    <button class="btn btn-primary" @onclick="Crear" disabled="@saving">
-        @(saving ? "Creando..." : "+ Agregar equipos")
-    </button>
-</div>
-
 @if (formError != null)
 {
     <p class="error">@formError</p>
 }
 
-@if (VerificandoSesion)
-{
-    <p>Verificando sesión...</p>
-}
-else if (loading)
+@if (VerificandoSesion || loading)
 {
     <p>Cargando...</p>
 }
 else
 {
+    <div class="form-inline">
+        <textarea @bind="nombresTexto" rows="3" placeholder="Un equipo por línea..."></textarea>
+        <button class="btn btn-primary" @onclick="Crear" disabled="@saving">
+            @(saving ? "Creando..." : "+ Agregar equipos")
+        </button>
+    </div>
+
     <table class="table">
         <thead>
             <tr><th>#</th><th>Nombre</th></tr>

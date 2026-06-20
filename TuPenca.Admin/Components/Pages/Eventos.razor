@@ -16,97 +16,93 @@
     <h1>Competencias deportivas</h1>
     <p class="workflow-page__intro">
         Para que los sitios puedan crear pencas, seguí estos tres pasos:
-        <strong>evento</strong> → <strong>partidos</strong> → <strong>plantilla</strong>.
+        <strong>evento</strong> → <strong>partidos</strong> → <strong>plantilla</strong>.<br/>
         Podés volver a cualquier paso desde la tabla o el indicador de arriba.
     </p>
 
     <CompetenciaFlujoStepper PasoActual="1" />
-
-    <button class="btn btn-primary" @onclick="ToggleFormulario">
-        @(mostrarForm ? "Cancelar" : "+ Nuevo evento")
-    </button>
-
-    @if (mostrarForm)
-    {
-        <div class="form-card">
-            <h2 class="stats-section-title">Paso 1 · Crear evento</h2>
-
-            <div class="form-group">
-                <label>Nombre</label>
-                <input @bind="form.Nombre" placeholder="Ej: Copa América 2026" />
-            </div>
-
-            <div class="form-row">
-                <div class="form-group">
-                    <label>Fecha inicio (Uruguay)</label>
-                    <div style="display:flex;gap:.5rem;">
-                        <input type="date" value="@fechaInicioStr" @onchange="OnFechaInicioChanged" style="flex:1;" />
-                        <input type="time" @bind="horaInicio" style="width:120px;" />
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label>Fecha fin (Uruguay)</label>
-                    <div style="display:flex;gap:.5rem;">
-                        <input type="date" value="@fechaFinStr" @onchange="OnFechaFinChanged" style="flex:1;" />
-                        <input type="time" @bind="horaFin" style="width:120px;" />
-                    </div>
-                </div>
-            </div>
-
-            <div class="form-group">
-                <label>Deporte</label>
-                <select @bind="form.DeporteId">
-                    <option value="@Guid.Empty">Seleccionar...</option>
-                    @foreach (var d in deportes)
-                    {
-                        <option value="@d.Id">@d.Nombre</option>
-                    }
-                </select>
-
-                <div style="display:flex;gap:.5rem;margin-top:.35rem;">
-                    <input @bind="nuevoDeporte" placeholder="Nuevo deporte..." style="flex:1;" />
-                    <button type="button" class="btn" style="background:var(--border);" @onclick="CrearDeporte">+ Crear</button>
-                </div>
-            </div>
-
-            <div class="form-group">
-                <label>Tipo de competencia</label>
-                <select @bind="form.TipoCompetenciaId">
-                    <option value="@Guid.Empty">Seleccionar...</option>
-                    @foreach (var t in tiposComp)
-                    {
-                        <option value="@t.Id">@t.Nombre</option>
-                    }
-                </select>
-
-                <div style="display:flex;gap:.5rem;margin-top:.35rem;">
-                    <input @bind="nuevoTipo" placeholder="Nuevo tipo..." style="flex:1;" />
-                    <button type="button" class="btn" style="background:var(--border);" @onclick="CrearTipo">+ Crear</button>
-                </div>
-            </div>
-
-            @if (formError != null)
-            {
-                <p class="error">@formError</p>
-            }
-
-            <button class="btn btn-primary" @onclick="Crear" disabled="@saving">
-                @(saving ? "Creando..." : "Crear y continuar con partidos →")
-            </button>
-        </div>
-    }
-
-    @if (VerificandoSesion)
-    {
-        <p>Verificando sesión...</p>
-    }
-    else if (loading)
+    
+    @if (VerificandoSesion || loading)
     {
         <p>Cargando...</p>
     }
     else
     {
+        <button class="btn btn-primary" @onclick="ToggleFormulario">
+            @(mostrarForm ? "Cancelar" : "+ Nuevo evento")
+        </button>
+    
+        @if (mostrarForm)
+        {
+            <div class="form-card">
+                <h2 class="stats-section-title">Paso 1 · Crear evento</h2>
+
+                <div class="form-group">
+                    <label>Nombre</label>
+                    <input @bind="form.Nombre" placeholder="Ej: Copa América 2026" />
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Fecha inicio (Uruguay)</label>
+                        <div style="display:flex;gap:.5rem;">
+                            <input type="date" value="@fechaInicioStr" @onchange="OnFechaInicioChanged" style="flex:1;" />
+                            <input type="time" @bind="horaInicio" style="width:120px;" />
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Fecha fin (Uruguay)</label>
+                        <div style="display:flex;gap:.5rem;">
+                            <input type="date" value="@fechaFinStr" @onchange="OnFechaFinChanged" style="flex:1;" />
+                            <input type="time" @bind="horaFin" style="width:120px;" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Deporte</label>
+                    <select @bind="form.DeporteId">
+                        <option value="@Guid.Empty">Seleccionar...</option>
+                        @foreach (var d in deportes)
+                        {
+                            <option value="@d.Id">@d.Nombre</option>
+                        }
+                    </select>
+
+                    <div style="display:flex;gap:.5rem;margin-top:.35rem;">
+                        <input @bind="nuevoDeporte" placeholder="Nuevo deporte..." style="flex:1;" />
+                        <button type="button" class="btn" style="background:var(--border);" @onclick="CrearDeporte">+ Crear</button>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Tipo de competencia</label>
+                    <select @bind="form.TipoCompetenciaId">
+                        <option value="@Guid.Empty">Seleccionar...</option>
+                        @foreach (var t in tiposComp)
+                        {
+                            <option value="@t.Id">@t.Nombre</option>
+                        }
+                    </select>
+
+                    <div style="display:flex;gap:.5rem;margin-top:.35rem;">
+                        <input @bind="nuevoTipo" placeholder="Nuevo tipo..." style="flex:1;" />
+                        <button type="button" class="btn" style="background:var(--border);" @onclick="CrearTipo">+ Crear</button>
+                    </div>
+                </div>
+
+                @if (formError != null)
+                {
+                    <p class="error">@formError</p>
+                }
+
+                <button class="btn btn-primary" @onclick="Crear" disabled="@saving">
+                    @(saving ? "Creando..." : "Crear y continuar con partidos →")
+                </button>
+            </div>
+        }
+
         <table class="table" style="margin-top:1.5rem;">
             <thead>
                 <tr>

@@ -18,7 +18,7 @@
 
     <h1>Plantillas de penca</h1>
     <p class="workflow-page__intro">
-        La plantilla define las reglas de puntaje, el monto de entrada y la comisión.
+        La plantilla define las reglas de puntaje, el monto de entrada y la comisión.<br/>
         Los administradores de sitio la usan para instanciar pencas sobre este evento.
     </p>
 
@@ -26,14 +26,14 @@
                              EventoId="eventoSeleccionado?.Id"
                              EventoNombre="@eventoSeleccionado?.Nombre" />
 
-    @if (mensajeExito != null)
-    {
-        <div class="workflow-banner">@((MarkupString)mensajeExito)</div>
-    }
+@if (mensajeExito != null)
+{
+    <div class="workflow-banner">@((MarkupString)mensajeExito)</div>
+}
 
 @if (VerificandoSesion)
 {
-    <p>Verificando sesión...</p>
+    <p>Cargando...</p>
 }
 else
 {
@@ -117,21 +117,26 @@ else
                 </div>
             }
 
-            <button type="button"
-                    class="btn"
-                    style="background:var(--border);margin-bottom:1rem;"
-                    @onclick="() => form.Reglas.Add(new ReglaPuntuacionDto())">
-                + Agregar regla
-            </button>
-
             @if (formError != null)
             {
                 <p class="error">@formError</p>
             }
-
-            <button class="btn btn-primary" @onclick="Crear" disabled="@saving">
-                @(saving ? "Creando..." : "Crear plantilla")
-            </button>
+            
+            <br />
+            
+            <div>
+                <button type="button"
+                        class="btn"
+                        style="background:var(--border);margin-bottom:1rem;"
+                        @onclick="() => form.Reglas.Add(new ReglaPuntuacionDto())">
+                    + Agregar regla
+                </button>
+            </div>
+            <div>
+                <button class="btn btn-primary" @onclick="Crear" disabled="@saving">
+                    @(saving ? "Creando..." : "Crear plantilla")
+                </button>
+            </div>
         </div>
     }
 

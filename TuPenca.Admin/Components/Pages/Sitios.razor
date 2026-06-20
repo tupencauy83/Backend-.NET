@@ -8,11 +8,7 @@
 
 <h1>Gestión de Sitios</h1>
 
-@if (VerificandoSesion)
-{
-    <p>Verificando sesión...</p>
-}
-else if (loading)
+@if (VerificandoSesion || loading)
 {
     <p>Cargando...</p>
 }
