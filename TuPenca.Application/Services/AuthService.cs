@@ -63,7 +63,7 @@ public class AuthService : IAuthService
                usuario.Email,
                usuario.Nombre,
                rolClaim,
-               usuario.SitioId.ToString() // ← agregado
+               usuario.SitioId.ToString()
             );
 
             return new LoginResponseDto
@@ -244,7 +244,7 @@ public class AuthService : IAuthService
             PasswordHash = HashPassword(request.Password),
             SitioId = sitioId.Value,
             Estado = estadoInicial,
-            Rol = request.Rol, // ← viene del request, puede ser UsuarioComun o AdministradorSitio
+            Rol = request.Rol, // viene del request, puede ser UsuarioComun o AdministradorSitio
             FechaRegistro = DateTime.UtcNow
         };
 

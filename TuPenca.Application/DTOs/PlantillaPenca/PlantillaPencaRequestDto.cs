@@ -12,7 +12,7 @@ namespace TuPenca.Application.DTOs.PlantillaPenca
         public Guid EventoDeportivoId { get; set; }
         public List<ReglaPuntuacionDto> Reglas { get; set; } = new();
 
-        public int PuntajeGanador { get; set; } // ← nuevo
+        public int PuntajeGanador { get; set; }
 
         // atributos para premios
 

@@ -14,7 +14,7 @@ namespace TuPenca.Application.DTOs.Pago
         public int Monto { get; set; }
         public EstadoPago Estado { get; set; }
         public DateTime Fecha { get; set; }
-        public string? LinkPago { get; set; }      // 👈 nuevo
-        public string? PreferenceId { get; set; }  // 👈 nuevo
+        public string? LinkPago { get; set; }
+        public string? PreferenceId { get; set; } 
     }
 }

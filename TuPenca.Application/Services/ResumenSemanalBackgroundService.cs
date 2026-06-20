@@ -32,7 +32,7 @@ namespace TuPenca.Infrastructure.Services
                         {
 
                         var pencaId = grupo.Key;
-                        var penca = await unitOfWork.Pencas.GetByIdAsync(pencaId); // ← una sola vez acá
+                        var penca = await unitOfWork.Pencas.GetByIdAsync(pencaId); // una sola vez acá
 
                         var parametros = await unitOfWork.ParametrosSitio.GetBySitioIdAsync(penca.SitioId);
                         if (parametros == null || !parametros.NotifResumenSemanal)

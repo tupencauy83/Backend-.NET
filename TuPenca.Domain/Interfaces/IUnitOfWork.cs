@@ -27,6 +27,6 @@ namespace TuPenca.Domain.Interfaces
         IRepository<TipoCompetencia> TiposCompetencia { get; }
         IParametrosSitioRepository ParametrosSitio { get; }
 
-        Task<int> SaveChangesAsync(); // ← confirma todos los cambios pendientes
+        Task<int> SaveChangesAsync(); // confirma todos los cambios pendientes
     }
 }

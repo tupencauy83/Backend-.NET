@@ -10,8 +10,8 @@ namespace TuPenca.Application.Interfaces.Services
     {
         Task<PagoResponseDto> RealizarPagoAsync(PagoRequestDto dto, Guid usuarioId);
         Task<bool> UsuarioPagoEnPencaAsync(Guid usuarioId, Guid pencaId);
-        Task ProcesarWebhookAsync(string pagoId, string nuevoEstado); // 👈 cambió la firma
+        Task ProcesarWebhookAsync(string pagoId, string nuevoEstado);
 
-        Task<List<Guid>> ObtenerInscripcionesAsync(Guid usuarioId); // ← para mobile
+        Task<List<Guid>> ObtenerInscripcionesAsync(Guid usuarioId);
     }
 }
