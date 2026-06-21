@@ -1,4 +1,6 @@
 ﻿@using Microsoft.JSInterop
+@using System.Text.Json
+@using TuPenca.Admin.Helpers
 @inject IJSRuntime JS
 @inject NavigationManager Navigation
 
@@ -28,8 +30,11 @@ else if (Autorizado)
         var token = await JS.InvokeAsync<string?>("localStorage.getItem", "adminToken");
         var rol = await JS.InvokeAsync<string?>("localStorage.getItem", "adminRol");
 
-        if (string.IsNullOrWhiteSpace(token) || rol != "AdministradorPlataforma")
+        if (string.IsNullOrWhiteSpace(token) ||
+            rol != "AdministradorPlataforma" ||
+            JwtTokenHelper.TokenExpirado(token))
         {
+            await LimpiarSesion();
             Navigation.NavigateTo("/login-admin", forceLoad: true);
             return;
         }
@@ -38,4 +43,12 @@ else if (Autorizado)
         Verificando = false;
         StateHasChanged();
     }
+
+    private async Task LimpiarSesion()
+    {
+        await JS.InvokeVoidAsync("localStorage.removeItem", "adminToken");
+        await JS.InvokeVoidAsync("localStorage.removeItem", "adminNombre");
+        await JS.InvokeVoidAsync("localStorage.removeItem", "adminRol");
+    }
+
 }

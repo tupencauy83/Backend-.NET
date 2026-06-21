@@ -1,6 +1,6 @@
-﻿using System.Text.Json;
-using Microsoft.AspNetCore.Components;
+﻿using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
+using TuPenca.Admin.Helpers;
 
 namespace TuPenca.Admin.Components.Pages;
 
@@ -23,7 +23,7 @@ public abstract class AdminProtectedPage : ComponentBase
 
         if (string.IsNullOrWhiteSpace(token) ||
             rol != "AdministradorPlataforma" ||
-            TokenExpirado(token))
+            JwtTokenHelper.TokenExpirado(token))
         {
             await LimpiarSesion();
             Navigation.NavigateTo("/login-admin", forceLoad: true);
@@ -51,37 +51,4 @@ public abstract class AdminProtectedPage : ComponentBase
         await JS.InvokeVoidAsync("localStorage.removeItem", "adminRol");
     }
 
-    private static bool TokenExpirado(string token)
-    {
-        try
-        {
-            var partes = token.Split('.');
-
-            if (partes.Length != 3)
-                return true;
-
-            var payload = partes[1];
-            var jsonBytes = Convert.FromBase64String(NormalizarBase64(payload));
-            var json = JsonSerializer.Deserialize<JsonElement>(jsonBytes);
-
-            if (!json.TryGetProperty("exp", out var expClaim))
-                return true;
-
-            var expUnix = expClaim.GetInt64();
-            var expira = DateTimeOffset.FromUnixTimeSeconds(expUnix);
-
-            return expira <= DateTimeOffset.UtcNow;
-        }
-        catch
-        {
-            return true;
-        }
-    }
-
-    private static string NormalizarBase64(string base64)
-    {
-        base64 = base64.Replace('-', '+').Replace('_', '/');
-
-        return base64.PadRight(base64.Length + (4 - base64.Length % 4) % 4, '=');
-    }
 }
