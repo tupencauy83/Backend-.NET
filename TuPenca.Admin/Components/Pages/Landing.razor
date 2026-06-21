@@ -1,5 +1,9 @@
 ﻿@page "/"
+@rendermode InteractiveServer
 @layout TuPenca.Admin.Components.Layout.PublicLayout
+@inject IJSRuntime JS
+@inject NavigationManager Navigation
+@using TuPenca.Admin.Helpers
 
 <div class="public-landing-page">
     <header class="public-landing-header">
@@ -39,3 +43,28 @@
         Proyecto académico - TuPenca
     </footer>
 </div>
+
+@code {
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+            return;
+
+        var token = await JS.InvokeAsync<string>("localStorage.getItem", "adminToken");
+        var rol = await JS.InvokeAsync<string>("localStorage.getItem", "adminRol");
+
+        if (!string.IsNullOrWhiteSpace(token) &&
+            rol == "AdministradorPlataforma" &&
+            !JwtTokenHelper.TokenExpirado(token))
+        {
+            Navigation.NavigateTo("/estadisticas", forceLoad: true);
+        }
+    }
+    
+    private async Task LimpiarSesion()
+    {
+        await JS.InvokeVoidAsync("localStorage.removeItem", "adminToken");
+        await JS.InvokeVoidAsync("localStorage.removeItem", "adminNombre");
+        await JS.InvokeVoidAsync("localStorage.removeItem", "adminRol");
+    }
+}
