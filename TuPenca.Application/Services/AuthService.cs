@@ -133,12 +133,12 @@ public class AuthService : IAuthService
         var usuario = await _unitOfWork.Usuarios
             .GetByEmailAsync(email, sitioId.Value);
 
-        if (sitio.TipoRegistro == TipoRegistro.Cerrada)
-            throw new Exception("Este sitio no acepta registros");
-
         // Si no existe, crearlo respetando la política de registro del sitio
         if (usuario == null)
         {
+            if (sitio.TipoRegistro == TipoRegistro.Cerrada)
+                throw new Exception("Este sitio no acepta registros");
+
             if (sitio.TipoRegistro == TipoRegistro.Con_Invitacion)
             {
                 var invitaciones = await _unitOfWork.Invitaciones.GetAllAsync();
