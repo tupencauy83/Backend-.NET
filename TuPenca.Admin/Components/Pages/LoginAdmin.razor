@@ -59,6 +59,10 @@
 
         try
         {
+            await JS.InvokeVoidAsync("localStorage.removeItem", "adminToken");
+            await JS.InvokeVoidAsync("localStorage.removeItem", "adminNombre");
+            await JS.InvokeVoidAsync("localStorage.removeItem", "adminRol");
+
             var response = await AuthApiClient.LoginAdminAsync(Login);
 
             if (response is null)
