@@ -17,13 +17,14 @@ public class JwtService : IJwtService
     public string GenerarToken(string id, string email, string nombre, string rol, string? sitioId = null)
     {
         var claims = new List<Claim>
-    {
-        new Claim(JwtRegisteredClaimNames.Sub, id),
-        new Claim(JwtRegisteredClaimNames.Email, email),
-        new Claim("nombre", nombre),
-        new Claim(ClaimTypes.Role, rol),
-        new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
-    };
+        {
+            new Claim(JwtRegisteredClaimNames.Sub, id),
+            new Claim(ClaimTypes.NameIdentifier, id),
+            new Claim(JwtRegisteredClaimNames.Email, email),
+            new Claim("nombre", nombre),
+            new Claim(ClaimTypes.Role, rol),
+            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+        };
 
         // Solo agregamos SitioId si no es admin de plataforma
         if (!string.IsNullOrEmpty(sitioId))
