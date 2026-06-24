@@ -18,6 +18,34 @@ namespace TuPenca.Application.Services
             _unitOfWork = unitOfWork;
         }
 
+        // Helper para conversion de dolar a peso para stripe
+
+
+        private async Task<decimal> ConvertirUyuAUsdAsync(int montoUyu)
+        {
+            using var http = new HttpClient();
+
+            var response = await http.GetAsync("https://api.frankfurter.dev/v2/rate/UYU/USD");
+            response.EnsureSuccessStatusCode();
+
+            var json = await response.Content.ReadAsStringAsync();
+
+            var data = System.Text.Json.JsonSerializer.Deserialize<FrankfurterRateResponse>(json);
+
+            if (data == null)
+                throw new Exception("Error al obtener tipo de cambio");
+
+            var usd = montoUyu * data.rate;
+
+            // redondeo seguro para Stripe (centavos)
+            return Math.Round(usd, 2);
+        }
+
+        private class FrankfurterRateResponse
+        {
+            public decimal rate { get; set; }
+        }
+
         public async Task<PagoResponseDto> RealizarPagoAsync(PagoRequestDto dto, Guid usuarioId)
         {
             var penca = await _unitOfWork.Pencas.GetByIdAsync(dto.PencaId);
@@ -31,7 +59,9 @@ namespace TuPenca.Application.Services
             if (plantilla == null)
                 throw new Exception("Plantilla de la penca no encontrada");
 
-            int monto = plantilla.MontoEntrada;
+            int montoUyu = plantilla.MontoEntrada;
+            decimal montoUsd = await ConvertirUyuAUsdAsync(montoUyu);
+            int montoStripe = (int)(montoUsd * 100); // centavos
 
             var pagos = await _unitOfWork.Pagos.GetAllAsync();
             var pagoExistente = pagos.FirstOrDefault(p =>
@@ -46,7 +76,7 @@ namespace TuPenca.Application.Services
             var pago = new Pago
             {
                 Id = Guid.NewGuid(),
-                Monto = monto,
+                Monto = montoUyu,
                 Fecha = DateTime.UtcNow,
                 Estado = EstadoPago.Pendiente,
                 UsuarioId = usuarioId,
@@ -72,10 +102,10 @@ namespace TuPenca.Application.Services
                 {
                     new SessionLineItemOptions
                     {
-                        PriceData = new SessionLineItemPriceDataOptions
+                       PriceData = new SessionLineItemPriceDataOptions
                         {
-                            Currency = "usd", // Stripe no soporta UYU, usamos USD para pruebas
-                            UnitAmount = monto * 100, // Stripe maneja centavos
+                            Currency = "usd",
+                            UnitAmount = montoStripe,
                             ProductData = new SessionLineItemPriceDataProductDataOptions
                             {
                                 Name = $"Inscripción Penca - {penca.Nombre}",

@@ -43,7 +43,7 @@ namespace TuPenca.Infrastructure.Services
                 }
 
                 await Task.Delay(
-                    TimeSpan.FromMinutes(30),
+                    TimeSpan.FromMinutes(5),
                     stoppingToken);
             }
         }
