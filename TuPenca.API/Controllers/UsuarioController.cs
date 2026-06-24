@@ -5,7 +5,6 @@ using TuPenca.Application.DTOs.Testing;
 using TuPenca.Application.DTOs.Usuario;
 using TuPenca.Application.Interfaces.Services;
 using TuPenca.Infrastructure.Interfaces.Providers;
-using TuPenca.Infrastructure.Services;
 
 namespace TuPenca.API.Controllers
 {
@@ -101,19 +100,13 @@ namespace TuPenca.API.Controllers
         }
 
         // ENDPOINT DE TESTEO ONLY PARA CAMBIAR CONTRASENAS
-        //
-
         [HttpPost("actualizar/password/test")]
         public async Task<IActionResult> ActualizarPasswordTestAsync([FromBody] UsuarioActualizarPasswordRequestDto request)
         {
-           
-                var response = await _usuarioService.ActualizarPasswordAsync(request);
-                return Ok(response);
-      
-            }
+            var response = await _usuarioService.ActualizarPasswordAsync(request);
+            return Ok(response);
+        }
         
-
-
         // Registramos el token FCM del celular del usuario para mandarle notificaciones push
         [HttpPost("registrar/fcm-token")]
         [Authorize(Roles = "UsuarioComun")]
@@ -121,11 +114,12 @@ namespace TuPenca.API.Controllers
         {
             try
             {
-                var usuarioIdClaim = Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
-                if (usuarioIdClaim == null)
+                var usuarioIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+                if (!Guid.TryParse(usuarioIdClaim, out var usuarioId))
                     return Unauthorized();
 
-                await _usuarioService.RegistrarFcmTokenAsync(usuarioIdClaim, request.FcmToken);
+                await _usuarioService.RegistrarFcmTokenAsync(usuarioId, request.FcmToken);
                 return Ok();
             }
             catch (Exception ex)
@@ -141,11 +135,12 @@ namespace TuPenca.API.Controllers
         {
             try
             {
-                var usuarioIdClaim = Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
-                if (usuarioIdClaim == null)
+                var usuarioIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+                if (!Guid.TryParse(usuarioIdClaim, out var usuarioId))
                     return Unauthorized();
 
-                await _usuarioService.RegistrarFcmTokenWebAsync(usuarioIdClaim, request.FcmToken);
+                await _usuarioService.RegistrarFcmTokenWebAsync(usuarioId, request.FcmToken);
                 return Ok();
             }
             catch (Exception ex)
@@ -161,11 +156,12 @@ namespace TuPenca.API.Controllers
         {
             try
             {
-                var usuarioIdClaim = Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
-                if (usuarioIdClaim == null)
+                var usuarioIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+                if (!Guid.TryParse(usuarioIdClaim, out var usuarioId))
                     return Unauthorized();
 
-                await _usuarioService.ActualizarPreferenciasNotificacionAsync(usuarioIdClaim, request);
+                await _usuarioService.ActualizarPreferenciasNotificacionAsync(usuarioId, request);
                 return Ok();
             }
             catch (Exception ex)
@@ -189,11 +185,6 @@ namespace TuPenca.API.Controllers
             }
         }
 
-
-
-
-
-
         [HttpPost("prueba")]
         public async Task<IActionResult> EnviarNotificacionPruebaAsync([FromBody] NotificacionPruebaRequestDto request)
         {
@@ -207,7 +198,5 @@ namespace TuPenca.API.Controllers
                 return BadRequest(ex.Message);
             }
         }
-
-
     }
 }
