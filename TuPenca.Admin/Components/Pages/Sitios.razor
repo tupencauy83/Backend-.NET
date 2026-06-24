@@ -19,6 +19,48 @@ else if (error != null)
 }
 else
 {
+    <div class="form-card stats-filtros">
+        <div class="stats-filtros__header">
+            <div>
+                <h2 class="stats-filtros__title">Filtros</h2>
+                <p class="stats-filtros__resumen">@ResumenFiltros()</p>
+            </div>
+
+            <div class="stats-filtros__actions">
+                @if (HayFiltrosActivos)
+                {
+                    <button type="button"
+                            class="btn btn-outline btn-sm"
+                            @onclick="LimpiarFiltros">
+                        Limpiar
+                    </button>
+                }
+            </div>
+        </div>
+
+        <div class="stats-filtros__grid">
+            <div class="form-group">
+                <label>Nombre</label>
+                <input class="public-form-control"
+                       placeholder="Buscar sitio..."
+                       @bind="filtroNombre"
+                       @bind:event="oninput" />
+            </div>
+
+            <div class="form-group">
+                <label>Estado</label>
+                <select @bind="filtroEstado">
+                    <option value="">Todos</option>
+
+                    @foreach (var estado in Enum.GetValues<EstadoSitio>())
+                    {
+                        <option value="@estado">@estado</option>
+                    }
+                </select>
+            </div>
+        </div>
+    </div>
+
     <table class="table">
         <thead>
             <tr>
@@ -29,7 +71,7 @@ else
             </tr>
         </thead>
         <tbody>
-            @foreach (var sitio in sitios)
+            @foreach (var sitio in SitiosFiltrados)
             {
                 <tr>
                     <td>@sitio.Nombre</td>
@@ -48,9 +90,9 @@ else
         </tbody>
     </table>
 
-    @if (sitios.Count == 0)
+    @if (!SitiosFiltrados.Any())
     {
-        <p class="empty">No hay sitios registrados.</p>
+        <p class="empty">No hay sitios que coincidan con los filtros.</p>
     }
 }
 
@@ -58,6 +100,41 @@ else
     private List<SitioRequestDto> sitios = new();
     private bool loading = true;
     private string? error;
+
+    private string filtroNombre = string.Empty;
+    private string filtroEstado = string.Empty;
+
+    private IEnumerable<SitioRequestDto> SitiosFiltrados =>
+        sitios.Where(s =>
+            (string.IsNullOrWhiteSpace(filtroNombre) || s.Nombre.Contains(filtroNombre, StringComparison.OrdinalIgnoreCase))
+            && (string.IsNullOrWhiteSpace(filtroEstado) || s.Estado.ToString() == filtroEstado)
+        );
+
+    private bool HayFiltrosActivos =>
+     !string.IsNullOrWhiteSpace(filtroNombre) ||
+     !string.IsNullOrWhiteSpace(filtroEstado);
+
+    private string ResumenFiltros()
+    {
+        if (!HayFiltrosActivos)
+            return "Mostrando todos los sitios";
+
+        var filtros = new List<string>();
+
+        if (!string.IsNullOrWhiteSpace(filtroNombre))
+            filtros.Add($"Nombre: {filtroNombre}");
+
+        if (!string.IsNullOrWhiteSpace(filtroEstado))
+            filtros.Add($"Estado: {filtroEstado}");
+
+        return string.Join(" | ", filtros);
+    }
+
+    private void LimpiarFiltros()
+    {
+        filtroNombre = string.Empty;
+        filtroEstado = string.Empty;
+    }
 
     protected override async Task OnSesionValidaAsync()
     {
