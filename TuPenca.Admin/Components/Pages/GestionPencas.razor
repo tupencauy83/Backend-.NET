@@ -22,6 +22,62 @@ else if (error != null)
 }
 else
 {
+    <div class="form-card stats-filtros">
+        <div class="stats-filtros__header">
+            <div>
+                <h2 class="stats-filtros__title">Filtros</h2>
+                <p class="stats-filtros__resumen">@ResumenFiltros()</p>
+            </div>
+
+            <div class="stats-filtros__actions">
+                @if (HayFiltrosActivos)
+                {
+                    <button type="button"
+                            class="btn btn-outline btn-sm"
+                            @onclick="LimpiarFiltros">
+                        Limpiar
+                    </button>
+                }
+            </div>
+        </div>
+
+        <div class="stats-filtros__grid">
+
+            <div class="form-group">
+                <label>Nombre</label>
+                <input class="public-form-control"
+                       placeholder="Buscar penca..."
+                       @bind="filtroNombre"
+                       @bind:event="oninput" />
+            </div>
+
+            <div class="form-group">
+                <label>Sitio</label>
+                <select @bind="filtroSitio">
+                    <option value="">Todos</option>
+
+                    @foreach (var sitio in SitiosDisponibles)
+                    {
+                        <option value="@sitio">@sitio</option>
+                    }
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Estado</label>
+                <select @bind="filtroEstado">
+                    <option value="">Todos</option>
+
+                    @foreach (var estado in Enum.GetValues<EstadoPenca>())
+                    {
+                        <option value="@estado">@estado</option>
+                    }
+                </select>
+            </div>
+
+        </div>
+    </div>
+
     <table class="table">
         <thead>
             <tr>
@@ -35,7 +91,7 @@ else
         </thead>
 
         <tbody>
-            @foreach (var penca in pencas)
+            @foreach (var penca in PencasFiltradas)
             {
                 <tr>
                     <td>@penca.Nombre</td>
@@ -73,9 +129,9 @@ else
         </tbody>
     </table>
 
-    @if (pencas.Count == 0)
+    @if (!PencasFiltradas.Any())
     {
-        <p class="empty">No hay pencas registradas.</p>
+        <p class="empty">No hay pencas que coincidan con los filtros.</p>
     }
 }
 
@@ -123,6 +179,54 @@ else
 
     private bool loading = true;
     private string? error;
+
+    private string filtroNombre = string.Empty;
+    private string filtroSitio = string.Empty;
+    private string filtroEstado = string.Empty;
+
+    private IEnumerable<PencaResponseDto> PencasFiltradas =>
+    pencas.Where(p =>
+        (string.IsNullOrWhiteSpace(filtroNombre) || p.Nombre.Contains(filtroNombre, StringComparison.OrdinalIgnoreCase))
+        && (string.IsNullOrWhiteSpace(filtroSitio) || p.SitioNombre.Equals(filtroSitio, StringComparison.OrdinalIgnoreCase))
+        && (string.IsNullOrWhiteSpace(filtroEstado) || p.Estado.ToString() == filtroEstado)
+    );
+
+    private IEnumerable<string> SitiosDisponibles =>
+    pencas.Select(p => p.SitioNombre)
+        .Where(s => !string.IsNullOrWhiteSpace(s))
+        .Distinct()
+        .OrderBy(s => s);
+
+    private bool HayFiltrosActivos => 
+    !string.IsNullOrWhiteSpace(filtroNombre) ||
+    !string.IsNullOrWhiteSpace(filtroSitio) ||
+    !string.IsNullOrWhiteSpace(filtroEstado);
+
+    private void LimpiarFiltros()
+    {
+        filtroNombre = string.Empty;
+        filtroSitio = string.Empty;
+        filtroEstado = string.Empty;
+    }
+
+    private string ResumenFiltros()
+    {
+        if (!HayFiltrosActivos)
+            return $"Mostrando {pencas.Count} penca(s)";
+
+        var filtros = new List<string>();
+
+        if (!string.IsNullOrWhiteSpace(filtroNombre))
+            filtros.Add($"Nombre: {filtroNombre}");
+
+        if (!string.IsNullOrWhiteSpace(filtroSitio))
+            filtros.Add($"Sitio: {filtroSitio}");
+
+        if (!string.IsNullOrWhiteSpace(filtroEstado))
+            filtros.Add($"Estado: {filtroEstado}");
+
+        return string.Join(" | ", filtros);
+    }
 
     protected override async Task OnSesionValidaAsync()
     {
