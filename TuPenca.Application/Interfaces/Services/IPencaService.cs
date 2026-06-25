@@ -23,5 +23,9 @@ namespace TuPenca.Application.Interfaces.Services
         // Editar % de premios de ganadores
         Task<PencaEditPremioDto> EditarPremiosAsync(Guid PencaId,PencaEditPremioDto dto);
 
+        // Para mobile, utility
+
+        Task<TiempoLimitePrediccionDto> ObtenerTiempoLimitePrediccionAsync(Guid pencaId);
+
     }
 }

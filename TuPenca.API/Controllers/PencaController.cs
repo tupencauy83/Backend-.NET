@@ -140,5 +140,21 @@ namespace TuPenca.API.Controllers
             }
         }
 
+
+        [HttpGet("{pencaId}/tiempo-limite-prediccion")]
+        [Authorize]
+        public async Task<IActionResult> ObtenerTiempoLimitePrediccion(Guid pencaId)
+        {
+            try
+            {
+                var response = await _pencaService.ObtenerTiempoLimitePrediccionAsync(pencaId);
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
     }
 }

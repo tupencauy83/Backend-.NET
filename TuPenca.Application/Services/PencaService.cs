@@ -326,5 +326,24 @@ namespace TuPenca.Application.Services
             };
         }
 
+
+        public async Task<TiempoLimitePrediccionDto> ObtenerTiempoLimitePrediccionAsync(Guid pencaId)
+        {
+            var penca = await _unitOfWork.Pencas.GetByIdAsync(pencaId);
+
+            if (penca == null)
+                throw new Exception("Penca no encontrada");
+
+            var plantilla = await _unitOfWork.PlantillasPenca.GetByIdAsync(penca.PlantillaPencaId);
+
+            if (plantilla == null)
+                throw new Exception("Plantilla no encontrada");
+
+            return new TiempoLimitePrediccionDto
+            {
+                TiempoLimitePrevioMinutos = plantilla.TiempoLimitePrevioMinutos
+            };
+        }
+
     }
 }
