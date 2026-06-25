@@ -133,9 +133,58 @@ else
             @evento.Nombre
         </h2>
 
-        @if (evento.Partidos == null || evento.Partidos.Count == 0)
+        <div class="form-card stats-filtros">
+            <div class="stats-filtros__header">
+                <div>
+                    <h2 class="stats-filtros__title">Filtros</h2>
+                    <p class="stats-filtros__resumen">@ResumenFiltros()</p>
+                </div>
+
+                <div class="stats-filtros__actions">
+                    @if (HayFiltrosActivos)
+                    {
+                        <button type="button"
+                                class="btn btn-outline btn-sm"
+                                @onclick="LimpiarFiltros">
+                            Limpiar
+                        </button>
+                    }
+                </div>
+            </div>
+
+            <div class="stats-filtros__grid">
+
+                <div class="form-group">
+                    <label>Equipo</label>
+                    <input class="public-form-control"
+                            placeholder="Buscar equipo..."
+                            @bind="filtroEquipo"
+                            @bind:event="oninput" />
+                </div>
+
+                <div class="form-group">
+                    <label>Fase</label>
+                    <input class="public-form-control"
+                            placeholder="Ej: Grupo A"
+                            @bind="filtroFase"
+                            @bind:event="oninput" />
+                </div>
+
+                <div class="form-group">
+                    <label>Fecha</label>
+                    <input type="date"
+                            class="public-form-control"
+                            @onchange="OnFiltroFechaChanged" />
+                </div>
+
+            </div>
+        </div>
+
+        @if (!PartidosFiltrados.Any())
         {
-            <p class="empty">No hay partidos cargados para este evento.</p>
+            <p class="empty">
+                No hay partidos que coincidan con los filtros seleccionados.
+            </p>
         }
         else
         {
@@ -151,7 +200,7 @@ else
                 </thead>
 
                 <tbody>
-                    @foreach (var partido in evento.Partidos)
+                    @foreach (var partido in PartidosFiltrados)
                     {
                         var yaJugado = partido.ResultadoLocal != null;
 
@@ -294,6 +343,58 @@ else
     private TimeOnly horaPartido = TimeOnly.FromDateTime(UruguayTimeHelper.NowInUruguay());
     private string fechaPartidoStr = UruguayTimeHelper.HoyComoInputDate();
     private PartidoRequestDto nuevoPartido = new();
+
+    private string filtroEquipo = string.Empty;
+    private string filtroFase = string.Empty;
+    private DateTime? filtroFecha;
+
+    private IEnumerable<PartidoResponseDto> PartidosFiltrados =>
+    evento?.Partidos?.Where(p =>
+        (string.IsNullOrWhiteSpace(filtroEquipo)
+            || p.EquipoLocal.Contains(filtroEquipo, StringComparison.OrdinalIgnoreCase)
+            || p.EquipoVisitante.Contains(filtroEquipo, StringComparison.OrdinalIgnoreCase))
+        && (string.IsNullOrWhiteSpace(filtroFase) || p.Fase.Contains(filtroFase, StringComparison.OrdinalIgnoreCase))
+        && ( filtroFecha == null || p.Fecha.Date == filtroFecha.Value.Date)
+    ) ?? Enumerable.Empty<PartidoResponseDto>();
+
+    private bool HayFiltrosActivos => 
+    !string.IsNullOrWhiteSpace(filtroEquipo)
+    || !string.IsNullOrWhiteSpace(filtroFase)
+    || filtroFecha != null;
+
+    private void LimpiarFiltros()
+    {
+        filtroEquipo = string.Empty;
+        filtroFase = string.Empty;
+        filtroFecha = null;
+    }
+
+    private string ResumenFiltros()
+    {
+        if (!HayFiltrosActivos)
+            return "Mostrando todos los partidos";
+
+        var filtros = new List<string>();
+
+        if (!string.IsNullOrWhiteSpace(filtroEquipo))
+            filtros.Add($"Equipo: {filtroEquipo}");
+
+        if (!string.IsNullOrWhiteSpace(filtroFase))
+            filtros.Add($"Fase: {filtroFase}");
+
+        if (filtroFecha != null)
+            filtros.Add($"Fecha: {filtroFecha:dd/MM/yyyy}");
+
+        return string.Join(" | ", filtros);
+    }
+
+    private void OnFiltroFechaChanged(ChangeEventArgs e)
+    {
+        if (DateTime.TryParse(e.Value?.ToString(), out var fecha))
+            filtroFecha = fecha;
+        else
+            filtroFecha = null;
+    }
 
     protected override async Task OnSesionValidaAsync()
     {
