@@ -134,6 +134,8 @@ namespace TuPenca.Application.Services
             // 2. Cargar resultado
             partido.ResultadoLocal = dto.GolesLocal;
             partido.ResultadoVisitante = dto.GolesVisitante;
+            partido.EquipoGanadorId = dto.EquipoGanadorId;
+
             await _unitOfWork.Partidos.UpdateAsync(partido);
 
             // 3. Traer todas las predicciones de este partido con detalle
