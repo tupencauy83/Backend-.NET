@@ -151,6 +151,55 @@ else
     }
     else
     {
+        @if (MostrarFiltros)
+        {
+                <div class="form-card stats-filtros" style="margin-top:1.5rem;">
+                    <div class="stats-filtros__header">
+                        <div>
+                            <h2 class="stats-filtros__title">Filtros</h2>
+                            <p class="stats-filtros__resumen">@ResumenFiltros()</p>
+                        </div>
+
+                        <div class="stats-filtros__actions">
+                            @if (HayFiltrosActivos)
+                            {
+                                <button type="button"
+                                        class="btn btn-outline btn-sm"
+                                        @onclick="LimpiarFiltros">
+                                    Limpiar
+                                </button>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="stats-filtros__grid">
+
+                        <div class="form-group">
+                            <label>Nombre</label>
+                            <input class="public-form-control"
+                                   placeholder="Buscar plantilla..."
+                                   @bind="filtroNombre"
+                                   @bind:event="oninput" />
+                        </div>
+
+                        <div class="form-group">
+                            <label>Evento</label>
+                            <select @bind="filtroEvento">
+                                <option value="">Todos</option>
+
+                                @foreach (var evento in eventos.OrderBy(e => e.Nombre))
+                                {
+                                    <option value="@evento.Id">
+                                        @evento.Nombre
+                                    </option>
+                                }
+                            </select>
+                        </div>
+
+                    </div>
+                </div>
+        }
+
         <table class="table" style="margin-top:1.5rem;">
             <thead>
                 <tr>
@@ -217,12 +266,55 @@ else
     private string? errorGeneral;
     private string? mensajeExito;
 
+    private string filtroNombre = string.Empty;
+    private string filtroEvento = string.Empty;
+
+    private bool MostrarFiltros => !EventoIdQuery.HasValue;
+
     private PlantillaRequestDto form = CrearFormularioInicial();
 
     private IEnumerable<PlantillaResponseDto> plantillasFiltradas =>
         EventoIdQuery.HasValue
             ? plantillas.Where(p => p.EventoDeportivoId == EventoIdQuery.Value)
-            : plantillas;
+            : plantillas.Where(p =>
+                (string.IsNullOrWhiteSpace(filtroNombre) ||
+                 p.Nombre.Contains(filtroNombre, StringComparison.OrdinalIgnoreCase))
+                &&
+                (string.IsNullOrWhiteSpace(filtroEvento) ||
+                 p.EventoDeportivoId.ToString() == filtroEvento)
+            );
+
+    private bool HayFiltrosActivos =>
+    !string.IsNullOrWhiteSpace(filtroNombre) ||
+    !string.IsNullOrWhiteSpace(filtroEvento);
+
+    private void LimpiarFiltros()
+    {
+        filtroNombre = string.Empty;
+        filtroEvento = string.Empty;
+    }
+
+    private string ResumenFiltros()
+    {
+        if (EventoIdQuery.HasValue)
+            return $"Mostrando {plantillasFiltradas.Count()} plantilla(s)";
+
+        if (!HayFiltrosActivos)
+            return $"Mostrando {plantillasFiltradas.Count()} plantilla(s)";
+
+        var filtros = new List<string>();
+
+        if (!string.IsNullOrWhiteSpace(filtroNombre))
+            filtros.Add($"Nombre: {filtroNombre}");
+
+        if (!string.IsNullOrWhiteSpace(filtroEvento))
+        {
+            var evento = eventos.FirstOrDefault(e => e.Id.ToString() == filtroEvento);
+            filtros.Add($"Evento: {evento?.Nombre}");
+        }
+
+        return string.Join(" | ", filtros);
+    }
 
     protected override async Task OnSesionValidaAsync()
     {
