@@ -103,6 +103,52 @@
             </div>
         }
 
+        <div class="form-card stats-filtros">
+            <div class="stats-filtros__header">
+                <div>
+                    <h2 class="stats-filtros__title">Filtros</h2>
+                    <p class="stats-filtros__resumen">@ResumenFiltros()</p>
+                </div>
+
+                <div class="stats-filtros__actions">
+                    @if (HayFiltrosActivos)
+                    {
+                        <button type="button"
+                                class="btn btn-outline btn-sm"
+                                @onclick="LimpiarFiltros">
+                            Limpiar
+                        </button>
+                    }
+                </div>
+            </div>
+
+            <div class="stats-filtros__grid">
+
+                <div class="form-group">
+                    <label>Nombre</label>
+                    <input class="public-form-control"
+                           placeholder="Buscar evento..."
+                           @bind="filtroNombre"
+                           @bind:event="oninput" />
+                </div>
+
+                <div class="form-group">
+                    <label>Fecha inicio</label>
+                    <input type="date"
+                           class="public-form-control"
+                           @bind="filtroFechaInicio" />
+                </div>
+
+                <div class="form-group">
+                    <label>Fecha fin</label>
+                    <input type="date"
+                           class="public-form-control"
+                           @bind="filtroFechaFin" />
+                </div>
+
+            </div>
+        </div>
+
         <table class="table" style="margin-top:1.5rem;">
             <thead>
                 <tr>
@@ -114,7 +160,7 @@
                 </tr>
             </thead>
             <tbody>
-                @foreach (var ev in eventos)
+                @foreach (var ev in EventosFiltrados)
                 {
                     var partidos = partidosPorEvento.GetValueOrDefault(ev.Id);
                     var plantillas = plantillasPorEvento.GetValueOrDefault(ev.Id);
@@ -142,9 +188,14 @@
             </tbody>
         </table>
 
-        @if (eventos.Count == 0)
+@*         @if (eventos.Count == 0)
         {
             <p class="empty">Todavía no hay competencias. Creá el primer evento con el botón de arriba.</p>
+        }
+ *@
+        @if (!EventosFiltrados.Any())
+        {
+            <p class="empty">No hay eventos que coincidan con los filtros.</p>
         }
     }
 </div>
@@ -174,6 +225,48 @@
     private string fechaFinStr = UruguayTimeHelper.HoyComoInputDate();
 
     private EventoRequestDto form = new();
+
+    private string filtroNombre = string.Empty;
+    private DateTime? filtroFechaInicio;
+    private DateTime? filtroFechaFin;
+
+    private IEnumerable<EventoResponseDto> EventosFiltrados =>
+        eventos.Where(e =>
+            (string.IsNullOrWhiteSpace(filtroNombre) || e.Nombre.Contains(filtroNombre, StringComparison.OrdinalIgnoreCase))
+            && (filtroFechaInicio == null || e.FechaInicio.Date >= filtroFechaInicio.Value.Date)
+            && (filtroFechaFin == null || e.FechaFin.Date <= filtroFechaFin.Value.Date)
+        );
+
+    private bool HayFiltrosActivos =>
+    !string.IsNullOrWhiteSpace(filtroNombre)
+    || filtroFechaInicio != null
+    || filtroFechaFin != null;
+
+    private void LimpiarFiltros()
+    {
+        filtroNombre = string.Empty;
+        filtroFechaInicio = null;
+        filtroFechaFin = null;
+    }
+
+    private string ResumenFiltros()
+    {
+        if (!HayFiltrosActivos)
+            return $"Mostrando {eventos.Count} evento(s)";
+
+        var filtros = new List<string>();
+
+        if (!string.IsNullOrWhiteSpace(filtroNombre))
+            filtros.Add($"Nombre: {filtroNombre}");
+
+        if (filtroFechaInicio != null)
+            filtros.Add($"Desde: {filtroFechaInicio:dd/MM/yyyy}");
+
+        if (filtroFechaFin != null)
+            filtros.Add($"Hasta: {filtroFechaFin:dd/MM/yyyy}");
+
+        return string.Join(" | ", filtros);
+    }
 
     protected override async Task OnSesionValidaAsync()
     {
