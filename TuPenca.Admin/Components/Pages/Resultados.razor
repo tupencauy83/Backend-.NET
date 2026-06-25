@@ -172,9 +172,9 @@ else
 
                 <div class="form-group">
                     <label>Fecha</label>
-                    <input type="date"
-                            class="public-form-control"
-                            @onchange="OnFiltroFechaChanged" />
+                        <input type="date"
+                               class="public-form-control"
+                               @bind="filtroFecha" />
                 </div>
 
             </div>
@@ -386,14 +386,6 @@ else
             filtros.Add($"Fecha: {filtroFecha:dd/MM/yyyy}");
 
         return string.Join(" | ", filtros);
-    }
-
-    private void OnFiltroFechaChanged(ChangeEventArgs e)
-    {
-        if (DateTime.TryParse(e.Value?.ToString(), out var fecha))
-            filtroFecha = fecha;
-        else
-            filtroFecha = null;
     }
 
     protected override async Task OnSesionValidaAsync()
