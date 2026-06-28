@@ -13,11 +13,12 @@ namespace TuPenca.Infrastructure.Data.Repositories
         public PrediccionRepository(AppDbContext context) : base(context) { }
 
         public async Task<IEnumerable<Prediccion>> GetByPartidoConDetalleAsync(Guid partidoId)
-            => await _context.Predicciones
-                .Include(p => p.Penca)
-                    .ThenInclude(penca => penca.Plantilla)
-                        .ThenInclude(plantilla => plantilla.Reglas)
-                .Where(p => p.PartidoId == partidoId)
-                .ToListAsync();
+     => await _context.Predicciones
+         .IgnoreQueryFilters() // proceso de sync global — no corre en contexto de un sitio puntual
+         .Include(p => p.Penca)
+             .ThenInclude(penca => penca.Plantilla)
+                 .ThenInclude(plantilla => plantilla.Reglas)
+         .Where(p => p.PartidoId == partidoId)
+         .ToListAsync();
     }
 }
