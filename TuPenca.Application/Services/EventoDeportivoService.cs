@@ -312,7 +312,7 @@ namespace TuPenca.Application.Services
                 catch (Exception ex)
                 {
                     Console.WriteLine(
-                        $"Error sincronizando partido {partido.Id}: {ex.Message}");
+                        $"Error sincronizando partido {partido.Id}: {ex.ToString()}");
                 }
             }
 
